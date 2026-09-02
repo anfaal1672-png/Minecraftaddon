@@ -8,7 +8,7 @@
  */
 export const PALETTES = {
   // ── 基本 ──
-  mega_tnt:          { crate: "#b8322a", emblem: "tnt" },
+  mega_tnt:          { crate: "#d4331c", emblem: "tnt" },   // バニラのTNTに合わせた赤
   mini_tnt:          { crate: "#e0786a", emblem: "dynamite" },
 
   // ── 核・破滅系 ──
@@ -92,5 +92,8 @@ export const PALETTES = {
 /** 虹TNTの木箱に使う横縞の色 */
 export const RAINBOW_ROWS = ["#e03a3a", "#e8892a", "#e8d02a", "#3ab84a", "#2a7ad8", "#8a4ad8"];
 
-/** 全TNT共通の底面テクスチャの色 */
-export const BOTTOM = { crate: "#7a2018" };
+/**
+ * 全TNT共通の底面テクスチャの色。
+ * バニラのTNTの底面は側面と同じ赤を使っているので、それに合わせる。
+ */
+export const BOTTOM = { crate: "#d4331c" };
