@@ -790,6 +790,35 @@ function pullNearbyItems(dimension, center, radius) {
   }
 }
 
+/**
+ * ブロックの中に埋めてしまわないテレポート。
+ *
+ * これまでのテレポート系TNTは行き先を確かめずに座標を指定していたため、
+ * 山や洞窟の中に送り込まれて即窒息、ということが普通に起きていた。
+ * tryTeleport に checkForBlocks を付けると、埋まる位置なら移動せず
+ * false が返るので、候補を何度か引き直して安全な場所を探す。
+ * どれも駄目なら移動しない (元の位置のほうがまだ安全なため)。
+ *
+ * @param pick 試行回数を受け取って行き先を返す関数
+ */
+function safeTeleport(entity, pick, tries = 8) {
+  if (typeof entity.tryTeleport !== "function") {
+    // tryTeleport が無い端末向けの保険
+    try {
+      entity.teleport(pick(0));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+  for (let i = 0; i < tries; i++) {
+    try {
+      if (entity.tryTeleport(pick(i), { checkForBlocks: true })) return true;
+    } catch (err) {}
+  }
+  return false;
+}
+
 /** 指定した候補の中から、実際にセットできたブロックIDを返す */
 function trySetBlock(dimension, loc, candidates) {
   for (const id of candidates) {
@@ -1095,91 +1124,83 @@ const INDESTRUCTIBLE_BLOCKS = new Set([
   "minecraft:flowing_lava",
 ]);
 
-function clearBlast(dimension, center, r) {
+/**
+ * クレーターを掘るときに 1tick で触るブロック数の上限。
+ * 規模がどれだけ大きくなっても1tickあたりの負荷を一定に保つための予算。
+ */
+const CRATER_BUDGET_PER_TICK = 2200;
+
+/**
+ * 爆心地に、すり鉢状のクレーターを掘る。
+ *
+ * 以前は半径方向にリング状の爆発点を並べ、点ごとに小さな球を消していた。
+ * この方式には2つの問題があった:
+ *  ・点の数が半径に関係なく固定だったため、半径を大きくすると外側のリングでは
+ *    点の間隔が球の直径より広がってしまい、「点々と穴が空いただけ」の見た目に
+ *    なっていた (反物質爆弾では最外周の点は26ブロックも離れていた)
+ *  ・点1つにつき1tickずつ進めていたので、反物質爆弾では爆発が26秒も続き、
+ *    しかも重なった部分の同じブロックを何度も消し直すので、その間ずっと重かった
+ *
+ * 今の方式は、クレーターの形を「柱(x,z)ごとに掘る深さ」として先に確定させ、
+ * 1tickあたりのブロック操作数に予算を設けて中心から外へ順に掘っていく。
+ * 同じブロックには二度触らないので無駄がなく、隙間のない本物のクレーターになる。
+ * 掘り終わるまでの時間は規模によらず数秒に収まる。
+ */
+function carveCrater(dimension, center, opts) {
+  const radius = Math.max(1, Math.round(opts.radius));
+  const depth = Math.max(2, Math.round(opts.depth ?? radius * 0.35));
+  // 中心付近は地表より上も抉れて、器のような断面になる
+  const lip = opts.lip ?? Math.max(1, Math.round(radius * 0.08));
+  const scorch = opts.scorch ?? false;
   const cx = Math.round(center.x);
   const cy = Math.round(center.y);
   const cz = Math.round(center.z);
-  for (let dx = -r; dx <= r; dx++) {
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dz = -r; dz <= r; dz++) {
-        const dist2 = dx * dx + dy * dy + dz * dz;
-        if (dist2 > r * r) continue;
-        // 表面付近(半径の70%〜100%)だけ、確率的に間引いてギザギザの輪郭にする
-        const distRatio = Math.sqrt(dist2) / r;
-        if (distRatio > 0.7 && Math.random() < ((distRatio - 0.7) / 0.3) * 0.6) continue;
+
+  const columns = [];
+  for (let dx = -radius; dx <= radius; dx++) {
+    for (let dz = -radius; dz <= radius; dz++) {
+      const r2 = dx * dx + dz * dz;
+      if (r2 > radius * radius) continue;
+      const frac = Math.sqrt(r2) / radius;
+      // 外周は確率的に間引いて、輪郭が完全な円にならないようにする
+      if (frac > 0.82 && Math.random() < (frac - 0.82) / 0.18) continue;
+      // すり鉢状の断面: 中心ほど深く、外へ行くほど浅い
+      const d = Math.round(depth * (1 - frac * frac) + rand(-1.2, 1.2));
+      if (d < 1) continue;
+      columns.push({ dx, dz, d, top: Math.round(lip * (1 - frac) + rand(0, 1)), frac });
+    }
+  }
+  if (columns.length === 0) return;
+  columns.sort((a, b) => a.frac - b.frac); // 中心から外へ広がっていくように見せる
+
+  let i = 0;
+  const runId = system.runInterval(() => {
+    let budget = CRATER_BUDGET_PER_TICK;
+    while (i < columns.length && budget > 0) {
+      const col = columns[i++];
+      const x = cx + col.dx;
+      const z = cz + col.dz;
+      const bottom = cy - col.d;
+      for (let y = cy + col.top; y >= bottom; y--) {
+        budget--;
         try {
-          const b = dimension.getBlock({ x: cx + dx, y: cy + dy, z: cz + dz });
+          const b = dimension.getBlock({ x, y, z });
           if (!b || b.typeId === "minecraft:air" || INDESTRUCTIBLE_BLOCKS.has(b.typeId)) continue;
           b.setType("minecraft:air");
         } catch (err) {}
       }
+      // クレーターの底を焼け焦げた地面にする
+      if (scorch && Math.random() < 0.35) {
+        try {
+          const floor = dimension.getBlock({ x, y: bottom - 1, z });
+          if (floor && floor.typeId !== "minecraft:air" && !INDESTRUCTIBLE_BLOCKS.has(floor.typeId)) {
+            floor.setType(Math.random() < 0.22 ? "minecraft:magma_block" : "minecraft:blackstone");
+          }
+        } catch (err) {}
+      }
     }
-  }
-}
-
-function craterBurst(dimension, center, opts) {
-  const { radius, count, basePower, coreCount = 3, corePower = 0, dome = 3, pointRadius = 3 } = opts;
-  const cp = corePower || basePower + 6;
-
-  // フェーズ1: 爆心地への即時集中爆発 (本物の爆発。音・炎・ノックバック等の「体感」用)
-  for (let i = 0; i < coreCount; i++) {
-    const delay = 1 + i;
-    const ox = i === 0 ? 0 : rand(-2, 2);
-    const oz = i === 0 ? 0 : rand(-2, 2);
-    system.runTimeout(() => {
-      try {
-        dimension.createExplosion(
-          { x: center.x + ox, y: center.y - dome * 0.5 + rand(-0.5, 1), z: center.z + oz },
-          cp,
-          { breaksBlocks: true, causesFire: true, allowUnderwater: true }
-        );
-      } catch (err) {}
-    }, delay);
-  }
-
-  // フェーズ2: リング状に密集配置した「純粋な破壊」ポイント
-  const ringCount = Math.max(3, Math.round(Math.sqrt(count)));
-  const points = [];
-  for (let ring = 1; ring <= ringCount; ring++) {
-    const ringFrac = ring / ringCount;
-    const ringR = radius * ringFrac;
-    // 外側のリングほど円周が長くなる分、点数も比例して増やし隙間を作らない
-    const ptsInRing = Math.max(4, Math.round((count * (2 * ring - 1)) / (ringCount * ringCount)));
-    for (let p = 0; p < ptsInRing; p++) {
-      // 完全な円にしないための角度・半径のジッター
-      const angle = (2 * Math.PI * p) / ptsInRing + rand(-0.4, 0.4);
-      const rJitter = ringR + rand(-radius * 0.08, radius * 0.08);
-      // 外周20%はランダムに間引いて輪郭をギザギザにする
-      if (ringFrac > 0.8 && Math.random() < (ringFrac - 0.8) * 3.5) continue;
-      points.push({ ox: Math.cos(angle) * rJitter, oz: Math.sin(angle) * rJitter, r: ringR });
-    }
-  }
-  // 内側から外側の順に発生させる(自然な広がり方に見える)
-  points.sort((a, b) => a.r - b.r);
-
-  let delay = 1 + coreCount;
-  for (const pt of points) {
-    // クレーター断面: 中心に近いほど深く、外側ほど浅くなる、すり鉢状の断面
-    const domeY = -dome * (1 - Math.pow(pt.r / radius, 1.3)) + rand(-0.8, 0.8);
-    const d = delay;
-    const loc = { x: center.x + pt.ox, y: center.y + domeY, z: center.z + pt.oz };
-    system.runTimeout(() => {
-      // 1. 保証された範囲を確実に破壊する(耐爆性を無視)
-      clearBlast(dimension, loc, pointRadius);
-      // 2. 同じ場所に本物の小さな爆発も重ねて起こす。
-      //    実際の explosion なので、焦げ跡・自然な発火・爆風の音・
-      //    周辺の巻き込み破壊など「本物の爆発」らしい質感を追加する。
-      //    範囲は clearBlast で既に保証済みなので、威力は控えめでよい。
-      try {
-        dimension.createExplosion(loc, Math.max(4, pointRadius * 1.5), {
-          breaksBlocks: true,
-          causesFire: true,
-          allowUnderwater: true,
-        });
-      } catch (err) {}
-    }, d);
-    delay += 1;
-  }
+    if (i >= columns.length) system.clearRun(runId);
+  }, 1);
 }
 
 /**
@@ -1235,98 +1256,150 @@ function irradiateEntities(dimension, center, radius, maxDamage) {
   system.runTimeout(() => pulse(0.5, true), 8); // 爆風到達
 }
 
+/* ==================================================================== */
+/*  核系TNTの段階表                                                      */
+/*                                                                      */
+/*  以前は核・超核・水素爆弾・ツァーリボンバ・反物質の5つに、ほぼ同じ手順が */
+/*  それぞれ個別に書かれていた。数値だけが違うのに手順が5箇所に散っていて、 */
+/*  片方だけ直して他が置き去りになりやすかったため、手順は nuclearBlast に */
+/*  1本化し、段階ごとの違いはこの表だけにまとめた。                        */
+/*                                                                      */
+/*  crater … 掘るクレーターの半径と深さ。実際の破壊はここが受け持つ。     */
+/*            createExplosion は地面の耐爆性で威力を使い切ってしまい、    */
+/*            威力をいくら上げても横方向にはあまり広がらない (Minecraft   */
+/*            自体の仕様で、設定では解除できない)。そのため範囲の拡大は   */
+/*            爆発ではなくクレーターの掘削で表現している。                */
+/* ==================================================================== */
+const NUKE_TIERS = {
+  nuke: {
+    messages: ["§c☢ 核TNTが爆発した！§r"],
+    cloud: { stemHeight: 14, capRadius: 10, duration: 60, lingerTicks: 140, densityMult: 1.0 },
+    fireRadius: 6,
+    radiation: { radius: 8, duration: 600, amplifier: 0, lingerTicks: 300 },
+    knockRadius: 18, knockStrength: 1.5,
+    damageRadius: 20, maxDamage: 35,
+    crater: { radius: 16, depth: 6 },
+    secondaryBlasts: 3, secondaryPower: 8,
+    shakeRadius: 50, shakeIntensity: 0.6, shakeSeconds: 1.8,
+  },
+  ultraNuke: {
+    messages: ["§4§l☢☢☢ 超核TNTが爆発した...世界が震える ☢☢☢§r"],
+    cloud: { stemHeight: 22, capRadius: 17, duration: 90, lingerTicks: 180, densityMult: 1.3 },
+    fireRadius: 10,
+    radiation: { radius: 13, duration: 1000, amplifier: 1, lingerTicks: 500 },
+    knockRadius: 30, knockStrength: 2.0,
+    damageRadius: 30, maxDamage: 50,
+    crater: { radius: 26, depth: 10 },
+    secondaryBlasts: 4, secondaryPower: 10,
+    shakeRadius: 75, shakeIntensity: 0.8, shakeSeconds: 2.6,
+  },
+  hydrogenBomb: {
+    messages: ["§5§l☢☢☢☢☢ 水素爆弾が炸裂した...大地が消し飛ぶ ☢☢☢☢☢§r"],
+    cloud: { stemHeight: 34, capRadius: 27, duration: 130, lingerTicks: 220, densityMult: 1.6 },
+    fireRadius: 14,
+    radiation: { radius: 20, duration: 1800, amplifier: 2, lingerTicks: 1200 },
+    knockRadius: 46, knockStrength: 2.6,
+    damageRadius: 42, maxDamage: 70,
+    crater: { radius: 38, depth: 14 },
+    secondaryBlasts: 5, secondaryPower: 12,
+    shakeRadius: 110, shakeIntensity: 0.95, shakeSeconds: 3.5,
+  },
+  /*
+   * ツァーリボンバ(弱体化前の100メガトン版)。
+   *
+   * 実際の記録:
+   * ・実験で使われた50メガトン版でも、火球半径 約4.6km、全壊半径 約35km
+   * ・弱体化前の100メガトン設計は、その約1.26倍(降伏出力の立方根比)相当と
+   *   推定されており、全壊半径は概算で40〜45km、火球は直径10kmに達したとされる
+   * ・きのこ雲は実測で高度60〜64km(50メガトン版)
+   *
+   * これを1ブロック=1mでそのまま再現しようとすると、半径44kmは一辺88,000
+   * ブロック超・面積にして約77億ブロックとなり、どんな端末でも即クラッシュする。
+   * そのため実寸ではなく「このアドオンの中で最大級の規模」として表現している。
+   */
+  tsarBomba: {
+    messages: [
+      "§d§l☢☢☢☢☢☢☢ ツァーリボンバ(100メガトン)が炸裂した ☢☢☢☢☢☢☢§r",
+      "§7実際の規模なら全壊半径は約44km、火球は直径10km超え§r",
+    ],
+    cloud: { stemHeight: 48, capRadius: 38, duration: 170, lingerTicks: 260, densityMult: 2.0 },
+    fireRadius: 18,
+    radiation: { radius: 28, duration: 2400, amplifier: 3, lingerTicks: 2400 },
+    knockRadius: 70, knockStrength: 3.4,
+    damageRadius: 60, maxDamage: 95,
+    crater: { radius: 52, depth: 19 },
+    secondaryBlasts: 6, secondaryPower: 14,
+    shakeRadius: 160, shakeIntensity: 1.0, shakeSeconds: 5.0,
+  },
+  /*
+   * 反物質爆弾。核分裂・核融合の先、物質と反物質の対消滅を再現した、
+   * このアドオンの頂点に立つ一撃。クレーターは直径136ブロックに達する。
+   */
+  antimatter: {
+    messages: ["§f§l⚛⚛⚛ 反物質爆弾が対消滅を起こした...この世の終わりだ ⚛⚛⚛§r"],
+    cloud: { stemHeight: 64, capRadius: 50, duration: 200, lingerTicks: 300, densityMult: 2.5 },
+    fireRadius: 22,
+    radiation: { radius: 36, duration: 6000, amplifier: 4, lingerTicks: 3600 },
+    knockRadius: 90, knockStrength: 3.8,
+    damageRadius: 80, maxDamage: 110,
+    crater: { radius: 68, depth: 25 },
+    secondaryBlasts: 8, secondaryPower: 16,
+    shakeRadius: 220, shakeIntensity: 1.0, shakeSeconds: 6.0,
+  },
+};
+
+/** 核系TNTの共通処理。段階ごとの違いは NUKE_TIERS だけを見ればよい。 */
+function nuclearBlast(dimension, center, tier) {
+  for (const line of tier.messages) announce(line);
+
+  mushroomCloud(dimension, center, tier.cloud);
+  fireEffect(dimension, center, tier.fireRadius);
+  radiationZone(dimension, center, tier.radiation);
+  shockwaveKnockback(dimension, center, tier.knockRadius, tier.knockStrength);
+  irradiateEntities(dimension, center, tier.damageRadius, tier.maxDamage);
+  carveCrater(dimension, center, { ...tier.crater, scorch: true });
+  nukeImpact(dimension, center, tier.shakeRadius, tier.shakeIntensity, tier.shakeSeconds);
+
+  // クレーターの中に本物の爆発をいくつか散らす。
+  // 地形の破壊そのものは carveCrater が受け持つので、ここは音・炎・
+  // 吹き飛びといった「本物の爆発らしさ」を足すための少数だけでいい。
+  for (let i = 0; i < tier.secondaryBlasts; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = tier.crater.radius * 0.4 * Math.sqrt(Math.random());
+    system.runTimeout(() => {
+      try {
+        dimension.createExplosion(
+          {
+            x: center.x + Math.cos(angle) * r,
+            y: center.y + rand(-1, 2),
+            z: center.z + Math.sin(angle) * r,
+          },
+          tier.secondaryPower,
+          { breaksBlocks: true, causesFire: true, allowUnderwater: true }
+        );
+      } catch (err) {}
+    }, 2 + i * 3);
+  }
+}
+
 function nukeEffect(dimension, center) {
-  try {
-    announce("§c☢ 核TNTが爆発した！§r");
-  } catch (err) {}
-  mushroomCloud(dimension, center, { stemHeight: 14, capRadius: 10, duration: 60, lingerTicks: 140, densityMult: 1.0 });
-  fireEffect(dimension, center, 6);
-  radiationZone(dimension, center, { radius: 8, duration: 600, amplifier: 0, lingerTicks: 300 });
-  shockwaveKnockback(dimension, center, 18, 1.5);
-  irradiateEntities(dimension, center, 20, 35);
-  craterBurst(dimension, center, { radius: 18, count: 20, basePower: 12, coreCount: 4, corePower: 18, dome: 3, pointRadius: 3 });
-  nukeImpact(dimension, center, 50, 0.6, 1.8);
+  nuclearBlast(dimension, center, NUKE_TIERS.nuke);
 }
 
 function ultraNukeEffect(dimension, center) {
-  try {
-    announce("§4§l☢☢☢ 超核TNTが爆発した...世界が震える ☢☢☢§r");
-  } catch (err) {}
-  mushroomCloud(dimension, center, { stemHeight: 22, capRadius: 17, duration: 90, lingerTicks: 180, densityMult: 1.3 });
-  fireEffect(dimension, center, 10);
-  radiationZone(dimension, center, { radius: 13, duration: 1000, amplifier: 1, lingerTicks: 500 });
-  shockwaveKnockback(dimension, center, 30, 2.0);
-  irradiateEntities(dimension, center, 30, 50);
-  craterBurst(dimension, center, { radius: 40, count: 50, basePower: 15, coreCount: 5, corePower: 23, dome: 4, pointRadius: 4 });
-  nukeImpact(dimension, center, 75, 0.8, 2.6);
+  nuclearBlast(dimension, center, NUKE_TIERS.ultraNuke);
 }
 
 function hydrogenBombEffect(dimension, center) {
-  try {
-    announce("§5§l☢☢☢☢☢ 水素爆弾が炸裂した...大地が消し飛ぶ ☢☢☢☢☢§r");
-  } catch (err) {}
-  mushroomCloud(dimension, center, { stemHeight: 34, capRadius: 27, duration: 130, lingerTicks: 220, densityMult: 1.6 });
-  fireEffect(dimension, center, 14);
-  radiationZone(dimension, center, { radius: 20, duration: 1800, amplifier: 2, lingerTicks: 1200 });
-  shockwaveKnockback(dimension, center, 46, 2.6);
-  irradiateEntities(dimension, center, 42, 70);
-  craterBurst(dimension, center, { radius: 72, count: 128, basePower: 19, coreCount: 6, corePower: 29, dome: 5, pointRadius: 5 });
-  nukeImpact(dimension, center, 110, 0.95, 3.5);
+  nuclearBlast(dimension, center, NUKE_TIERS.hydrogenBomb);
 }
 
-/**
- * ツァーリボンバ(弱体化前の100メガトン版)。
- *
- * 実際の記録:
- * ・実験で使われた50メガトン版でも、火球半径 約4.6km、全壊半径 約35km
- * ・弱体化前の100メガトン設計は、その約1.26倍(降伏出力の立方根比)相当と
- *   推定されており、全壊半径は概算で40〜45km、火球は直径10kmに達したとされる
- * ・きのこ雲は実測で高度60〜64km(50メガトン版)
- *
- * これをMinecraftで「完璧に」1ブロック=1mでそのまま再現しようとすると、
- * 半径44kmはブロック数にして一辺88,000ブロック超・面積は約77億ブロックの
- * 爆発判定が必要になり、どんな端末でも即クラッシュする規模のため不可能。
- * そのため、このアドオンの中で最大威力・最大範囲・最長持続の演出にすることで、
- * 実際の桁違いのスケール感をゲームが処理できる範囲で表現している。
- */
 function tsarBombaEffect(dimension, center) {
-  try {
-    announce("§d§l☢☢☢☢☢☢☢ ツァーリボンバ(100メガトン)が炸裂した ☢☢☢☢☢☢☢§r");
-    announce("§7実際の規模なら全壊半径は約44km、火球は直径10km超え§r");
-  } catch (err) {}
-  mushroomCloud(dimension, center, { stemHeight: 48, capRadius: 38, duration: 170, lingerTicks: 260, densityMult: 2.0 });
-  fireEffect(dimension, center, 18);
-  radiationZone(dimension, center, { radius: 28, duration: 2400, amplifier: 3, lingerTicks: 2400 });
-  shockwaveKnockback(dimension, center, 70, 3.4);
-  irradiateEntities(dimension, center, 60, 95);
-  craterBurst(dimension, center, { radius: 115, count: 270, basePower: 24, coreCount: 7, corePower: 36, dome: 6, pointRadius: 6 });
-  nukeImpact(dimension, center, 160, 1.0, 5.0);
+  nuclearBlast(dimension, center, NUKE_TIERS.tsarBomba);
 }
 
-/**
- * 反物質爆弾。核分裂・核融合の先、物質と反物質の対消滅を再現した、
- * このアドオンの頂点に立つ「最強最悪」の一撃。
- *
- * 【威力について】単発の createExplosion は、Minecraft自体の仕様で
- * 威力(半径)をどれだけ上げても、光線が地面の耐爆性で威力を使い切ってしまう
- * ため、ある一定値を超えると見た目の破壊範囲がほぼ変わらなくなる
- * (公式Wikiにも明記されている仕様で、実際に威力950で17秒のハングも確認済み)。
- * これは設定で解除できるものではなく、Minecraft自身の爆発アルゴリズムの
- * 根本的な限界。そのため単発の威力は安全な範囲(最大80)に抑えつつ、
- * 実質的に範囲制限を超えるために craterBurst で複数箇所に爆発を
- * 分散させ、水平方向の破壊範囲を段階ごとに大きく伸ばしている。
- */
 function antimatterEffect(dimension, center) {
-  try {
-    announce("§f§l⚛⚛⚛ 反物質爆弾が対消滅を起こした...この世の終わりだ ⚛⚛⚛§r");
-  } catch (err) {}
-  mushroomCloud(dimension, center, { stemHeight: 64, capRadius: 50, duration: 200, lingerTicks: 300, densityMult: 2.5 });
-  fireEffect(dimension, center, 22);
-  radiationZone(dimension, center, { radius: 36, duration: 6000, amplifier: 4, lingerTicks: 3600 });
-  shockwaveKnockback(dimension, center, 90, 3.8);
-  irradiateEntities(dimension, center, 80, 110);
-  craterBurst(dimension, center, { radius: 175, count: 524, basePower: 30, coreCount: 9, corePower: 44, dome: 8, pointRadius: 7 });
-  nukeImpact(dimension, center, 220, 1.0, 6.0);
+  nuclearBlast(dimension, center, NUKE_TIERS.antimatter);
 }
 
 function iceEffect(dimension, center) {
@@ -1425,11 +1498,11 @@ function gravityEffect(dimension, center) {
 
 function teleportEffect(dimension, center) {
   for (const ent of nearbyEntities(dimension, center, 8)) {
-    try {
-      const dx = Math.floor((Math.random() - 0.5) * 24);
-      const dz = Math.floor((Math.random() - 0.5) * 24);
-      ent.teleport({ x: center.x + dx, y: center.y + 2, z: center.z + dz }, { dimension });
-    } catch (err) {}
+    safeTeleport(ent, () => ({
+      x: center.x + Math.floor((Math.random() - 0.5) * 24),
+      y: center.y + 2,
+      z: center.z + Math.floor((Math.random() - 0.5) * 24),
+    }));
   }
 }
 
@@ -1654,7 +1727,8 @@ function treasureEffect(dimension, center) {
 }
 
 function swapEffect(dimension, center) {
-  const ents = nearbyEntities(dimension, center, 10).filter((e) => e.typeId !== "minecraft:item");
+  const ents = nearbyEntities(dimension, center, 10)
+    .filter((e) => e.typeId !== "minecraft:item" && e.typeId !== "minecraft:xp_orb");
   if (ents.length < 2) return;
   ents.sort((a, b) => {
     const da = distSq(a.location, center);
@@ -1663,11 +1737,15 @@ function swapEffect(dimension, center) {
   });
   const a = ents[0];
   const b = ents[1];
+  const locA = { ...a.location };
+  const locB = { ...b.location };
+  // 片方だけ飛んで重なるのを避けるため、両方成功したときだけ入れ替える
+  if (!safeTeleport(a, () => locB, 1)) return;
+  if (!safeTeleport(b, () => locA, 1)) {
+    safeTeleport(a, () => locA, 1);
+    return;
+  }
   try {
-    const locA = { ...a.location };
-    const locB = { ...b.location };
-    a.teleport(locB, { dimension });
-    b.teleport(locA, { dimension });
     dimension.spawnParticle("minecraft:endrod", locA);
     dimension.spawnParticle("minecraft:endrod", locB);
   } catch (err) {}
@@ -1940,8 +2018,10 @@ function curseEffect(dimension, center) {
 }
 
 function rainbowEffect(dimension, center) {
+  // 虹TNTは威力6の中堅TNT。ここに nukeEffect が混ざっていたため、
+  // 運が悪いと巨大クレーターと放射能汚染まで引き当ててしまっていたので外した。
   const pool = [
-    nukeEffect, iceEffect, poisonEffect, fireEffect, thunderEffect, teleportEffect,
+    iceEffect, poisonEffect, fireEffect, thunderEffect, teleportEffect,
     healEffect, confettiEffect, antiGravityEffect, lavaEffect, waterEffect,
     darknessEffect, summonEffect, earthquakeEffect, bouncyEffect, webEffect,
     treasureEffect, swapEffect, confusionEffect, grassEffect, desertEffect,
@@ -1956,21 +2036,36 @@ function rainbowEffect(dimension, center) {
   pick(dimension, center);
 }
 
+// 草ブロックはバージョンによって ID が違うことがあるので候補を並べておく
+const MEADOW_PLANTS = [
+  ["minecraft:short_grass", "minecraft:tallgrass"],
+  ["minecraft:poppy"], ["minecraft:dandelion"],
+  ["minecraft:blue_orchid"], ["minecraft:allium"], ["minecraft:cornflower"],
+];
+const MEADOW_SOIL = new Set([
+  "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:podzol",
+  "minecraft:sand", "minecraft:gravel", "minecraft:stone",
+]);
+
 function grassEffect(dimension, center) {
-  const PLANTS = ["minecraft:short_grass", "minecraft:poppy", "minecraft:dandelion", "minecraft:blue_orchid", "minecraft:allium"];
   const R = 6;
   for (let dx = -R; dx <= R; dx++) {
     for (let dz = -R; dz <= R; dz++) {
       if (dx * dx + dz * dz > R * R) continue;
-      if (Math.random() > 0.4) continue;
       const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
       try {
         const b = dimension.getBlock(loc);
-        const below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-        if (b && b.typeId === "minecraft:air" && below &&
-            (below.typeId === "minecraft:grass_block" || below.typeId === "minecraft:dirt")) {
-          trySetBlock(dimension, loc, [PLANTS[Math.floor(Math.random() * PLANTS.length)]]);
+        let below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
+        if (!b || b.typeId !== "minecraft:air" || !below) continue;
+        // 草原TNTなのに、元から草ブロックの場所にしか花が咲かなかった。
+        // 土や砂も草ブロックに変えてから生やすようにする。
+        if (MEADOW_SOIL.has(below.typeId)) {
+          below.setType("minecraft:grass_block");
+          below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
         }
+        if (!below || below.typeId !== "minecraft:grass_block") continue;
+        if (Math.random() > 0.5) continue;
+        trySetBlock(dimension, loc, MEADOW_PLANTS[Math.floor(Math.random() * MEADOW_PLANTS.length)]);
       } catch (err) {}
     }
   }
@@ -2072,6 +2167,7 @@ function musicEffect(dimension, center) {
 }
 
 function tsunamiEffect(dimension, center) {
+  const placed = [];
   const R = 5;
   for (let dx = -R; dx <= R; dx++) {
     for (let dz = -R; dz <= R; dz++) {
@@ -2079,7 +2175,9 @@ function tsunamiEffect(dimension, center) {
       const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
       try {
         const b = dimension.getBlock(loc);
-        if (b && b.typeId === "minecraft:air") trySetBlock(dimension, loc, ["minecraft:water"]);
+        if (b && b.typeId === "minecraft:air" && trySetBlock(dimension, loc, ["minecraft:water"])) {
+          placed.push(loc);
+        }
       } catch (err) {}
     }
   }
@@ -2092,16 +2190,15 @@ function tsunamiEffect(dimension, center) {
       ent.applyKnockback({ x: dx / dist, z: dz / dist }, 1.3);
     } catch (err) {}
   }
+  // 引き潮。自分が置いた水だけを消す。
+  // 以前は範囲内の水を無条件に消していたので、海辺や池の近くで使うと
+  // 元々そこにあった水まで一緒に消えてしまっていた。
   system.runTimeout(() => {
-    const R2 = 5;
-    for (let dx = -R2; dx <= R2; dx++) {
-      for (let dz = -R2; dz <= R2; dz++) {
-        try {
-          const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
-          const b = dimension.getBlock(loc);
-          if (b && b.typeId === "minecraft:water") b.setType("minecraft:air");
-        } catch (err) {}
-      }
+    for (const loc of placed) {
+      try {
+        const b = dimension.getBlock(loc);
+        if (b && b.typeId === "minecraft:water") b.setType("minecraft:air");
+      } catch (err) {}
     }
   }, 100);
 }
@@ -2114,6 +2211,17 @@ const ORE_SMELT = {
   "minecraft:copper_ore": "minecraft:copper_ingot",
   "minecraft:deepslate_copper_ore": "minecraft:copper_ingot",
   "minecraft:ancient_debris": "minecraft:netherite_scrap",
+  "minecraft:nether_gold_ore": "minecraft:gold_ingot",
+};
+
+/** その場で焼き固まるブロック (製錬レシピのうち、ブロックのまま残るもの) */
+const SMELT_TO_BLOCK = {
+  "minecraft:sand": ["minecraft:glass"],
+  "minecraft:red_sand": ["minecraft:glass"],
+  "minecraft:cobblestone": ["minecraft:stone"],
+  "minecraft:cobbled_deepslate": ["minecraft:deepslate"],
+  "minecraft:clay": ["minecraft:terracotta", "minecraft:hardened_clay"],
+  "minecraft:wet_sponge": ["minecraft:sponge"],
 };
 function smelterEffect(dimension, center) {
   const R = 6;
@@ -2124,37 +2232,59 @@ function smelterEffect(dimension, center) {
         const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
         try {
           const b = dimension.getBlock(loc);
-          const drop = b && ORE_SMELT[b.typeId];
+          if (!b) continue;
+          const drop = ORE_SMELT[b.typeId];
           if (drop) {
             b.setType("minecraft:air");
             dimension.spawnItem(new ItemStack(drop, 1), loc);
+            continue;
           }
+          const baked = SMELT_TO_BLOCK[b.typeId];
+          if (baked) trySetBlock(dimension, loc, baked);
         } catch (err) {}
       }
     }
   }
 }
 
+/*
+ * 作物ごとの「成長度」を表す状態名と、その最大値。
+ * 統合版ではビートルートも growth 0〜7 で、ネザーウォートだけは
+ * growth ではなく age 0〜3 を使う。以前はどちらも growth の 3 を
+ * 上限にしていたため、ビートルートは中途半端にしか育たず、
+ * ネザーウォートに至っては状態名が違うので一切育っていなかった。
+ */
+const CROP_STATES = {
+  "minecraft:wheat": { state: "growth", max: 7 },
+  "minecraft:carrots": { state: "growth", max: 7 },
+  "minecraft:potatoes": { state: "growth", max: 7 },
+  "minecraft:beetroot": { state: "growth", max: 7 },
+  "minecraft:pumpkin_stem": { state: "growth", max: 7 },
+  "minecraft:melon_stem": { state: "growth", max: 7 },
+  "minecraft:sweet_berry_bush": { state: "growth", max: 3 },
+  "minecraft:nether_wart": { state: "age", max: 3 },
+  "minecraft:cocoa": { state: "age", max: 2 },
+};
+
 function harvestEffect(dimension, center) {
-  const MATURE = {
-    "minecraft:wheat": 7, "minecraft:carrots": 7, "minecraft:potatoes": 7,
-    "minecraft:beetroot": 3, "minecraft:nether_wart": 3,
-  };
   const R = 6;
   for (let dx = -R; dx <= R; dx++) {
     for (let dz = -R; dz <= R; dz++) {
       if (dx * dx + dz * dz > R * R) continue;
-      const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
-      try {
-        const b = dimension.getBlock(loc);
-        if (!b) continue;
-        const maxAge = MATURE[b.typeId];
-        if (maxAge === undefined) continue;
-        const growth = b.permutation.getState("growth");
-        if (growth !== undefined && growth < maxAge) {
-          b.setPermutation(b.permutation.withState("growth", maxAge));
-        }
-      } catch (err) {}
+      // 畑がTNTと同じ高さとは限らないので、上下1ブロックも見る
+      for (let dy = -1; dy <= 1; dy++) {
+        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
+        try {
+          const b = dimension.getBlock(loc);
+          if (!b) continue;
+          const crop = CROP_STATES[b.typeId];
+          if (!crop) continue;
+          const cur = b.permutation.getState(crop.state);
+          if (cur !== undefined && cur < crop.max) {
+            b.setPermutation(b.permutation.withState(crop.state, crop.max));
+          }
+        } catch (err) {}
+      }
     }
   }
 }
@@ -2163,16 +2293,27 @@ function daynightEffect(dimension, center) {
   try {
     const t = world.getTimeOfDay();
     world.setTimeOfDay(t < 13000 ? 13000 : 0);
-  } catch (err) {}
+  } catch (err) {
+    try {
+      dimension.runCommand("time set night");
+    } catch (err2) {}
+  }
   try {
     dimension.playSound("random.orb", center);
   } catch (err) {}
 }
 
 function stormEffect(dimension, center) {
+  // WeatherType は "Thunder" (先頭大文字) の列挙値。
+  // これまで "thunder" を渡していたため常に例外になり、
+  // 嵐TNTなのに天候が一度も変わっていなかった。
   try {
-    world.setWeather("thunder", 6000);
-  } catch (err) {}
+    world.setWeather("Thunder", 6000);
+  } catch (err) {
+    try {
+      dimension.runCommand("weather thunder 300");
+    } catch (err2) {}
+  }
   for (let i = 0; i < 4; i++) {
     system.runTimeout(() => {
       try {
@@ -2204,9 +2345,12 @@ function endermanEffect(dimension, center) {
   for (const ent of nearbyEntities(dimension, center, 6)) {
     try {
       if (ent.typeId !== "minecraft:player") continue;
-      const dx = (Math.random() - 0.5) * 16;
-      const dz = (Math.random() - 0.5) * 16;
-      ent.teleport({ x: ent.location.x + dx, y: ent.location.y, z: ent.location.z + dz });
+      const from = { ...ent.location };
+      safeTeleport(ent, () => ({
+        x: from.x + (Math.random() - 0.5) * 16,
+        y: from.y,
+        z: from.z + (Math.random() - 0.5) * 16,
+      }));
     } catch (err) {}
   }
   for (let i = 0; i < 3; i++) {
@@ -2298,19 +2442,33 @@ function fortuneEffect(dimension, center) {
     } catch (err) {}
     for (const ent of nearbyEntities(dimension, center, 5)) {
       try {
+        // 統合版に "unluck" は無く、呼ぶと例外になって何も付かなかった
         ent.addEffect("minecraft:weakness", 200, { amplifier: 1, showParticles: false });
-        ent.addEffect("minecraft:unluck", 200, { amplifier: 0, showParticles: false });
+        ent.addEffect("minecraft:mining_fatigue", 200, { amplifier: 1, showParticles: false });
       } catch (err) {}
     }
   }
 }
 
 function builderEffect(dimension, center) {
+  // ID がバージョンで揺れるものがあるので、候補を順に試す形にしてある
   const UPGRADE = {
-    "minecraft:cobblestone": "minecraft:stone_bricks",
-    "minecraft:dirt": "minecraft:dirt_path",
-    "minecraft:oak_log": "minecraft:oak_planks",
-    "minecraft:sand": "minecraft:sandstone",
+    "minecraft:cobblestone": ["minecraft:stone_bricks", "minecraft:stonebrick"],
+    "minecraft:stone": ["minecraft:stone_bricks", "minecraft:stonebrick"],
+    "minecraft:cobbled_deepslate": ["minecraft:deepslate_bricks"],
+    "minecraft:gravel": ["minecraft:cobblestone"],
+    "minecraft:dirt": ["minecraft:dirt_path", "minecraft:grass_path"],
+    "minecraft:coarse_dirt": ["minecraft:dirt_path", "minecraft:grass_path"],
+    "minecraft:grass_block": ["minecraft:dirt_path", "minecraft:grass_path"],
+    "minecraft:sand": ["minecraft:sandstone"],
+    "minecraft:red_sand": ["minecraft:red_sandstone"],
+    "minecraft:netherrack": ["minecraft:nether_brick", "minecraft:nether_bricks"],
+    "minecraft:oak_log": ["minecraft:oak_planks"],
+    "minecraft:spruce_log": ["minecraft:spruce_planks"],
+    "minecraft:birch_log": ["minecraft:birch_planks"],
+    "minecraft:jungle_log": ["minecraft:jungle_planks"],
+    "minecraft:acacia_log": ["minecraft:acacia_planks"],
+    "minecraft:dark_oak_log": ["minecraft:dark_oak_planks"],
   };
   const R = 5;
   for (let dx = -R; dx <= R; dx++) {
@@ -2320,7 +2478,7 @@ function builderEffect(dimension, center) {
       try {
         const b = dimension.getBlock(loc);
         const up = b && UPGRADE[b.typeId];
-        if (up) b.setType(up);
+        if (up) trySetBlock(dimension, loc, up);
       } catch (err) {}
     }
   }
@@ -2443,8 +2601,15 @@ function cactusEffect(dimension, center) {
       try {
         const b = dimension.getBlock(loc);
         const below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-        if (b && b.typeId === "minecraft:air" && below &&
-            (below.typeId === "minecraft:sand" || below.typeId === "minecraft:red_sand")) {
+        if (!b || b.typeId !== "minecraft:air" || !below) continue;
+        // サボテンは砂の上にしか置けない。草原などで使うと一本も生えなかったので、
+        // 土や草ブロックなら先に砂へ変えてから生やすようにした。
+        if (below.typeId === "minecraft:grass_block" || below.typeId === "minecraft:dirt" ||
+            below.typeId === "minecraft:coarse_dirt" || below.typeId === "minecraft:podzol") {
+          below.setType("minecraft:sand");
+        }
+        const ground = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
+        if (ground && (ground.typeId === "minecraft:sand" || ground.typeId === "minecraft:red_sand")) {
           trySetBlock(dimension, loc, ["minecraft:cactus"]);
         }
       } catch (err) {}
@@ -2452,15 +2617,22 @@ function cactusEffect(dimension, center) {
   }
 }
 
+/**
+ * 黒曜石TNT。溶岩を黒曜石に変えるだけだったので、溶岩の無い場所で使うと
+ * 威力0と相まって本当に何も起きなかった。そこで、爆心地を包む黒曜石の殻も
+ * 張るようにした。空いている場所だけを埋めるので、既存の建築は壊さない。
+ */
 function obsidianEffect(dimension, center) {
+  const base = { x: Math.floor(center.x), y: Math.floor(center.y), z: Math.floor(center.z) };
+
+  // 1) 周囲の溶岩を黒曜石に変える
   const R = 5;
   for (let dx = -R; dx <= R; dx++) {
     for (let dy = -2; dy <= 2; dy++) {
       for (let dz = -R; dz <= R; dz++) {
         if (dx * dx + dy * dy + dz * dz > R * R) continue;
-        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
         try {
-          const b = dimension.getBlock(loc);
+          const b = dimension.getBlock({ x: base.x + dx, y: base.y + dy, z: base.z + dz });
           if (b && (b.typeId === "minecraft:lava" || b.typeId === "minecraft:flowing_lava")) {
             b.setType("minecraft:obsidian");
           }
@@ -2468,6 +2640,28 @@ function obsidianEffect(dimension, center) {
       }
     }
   }
+
+  // 2) 爆心地を黒曜石のドームで包む (球の殻の部分だけを、空いている場所に置く)
+  const SR = 4;
+  for (let dx = -SR; dx <= SR; dx++) {
+    for (let dy = -SR; dy <= SR; dy++) {
+      for (let dz = -SR; dz <= SR; dz++) {
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 > SR * SR || d2 < (SR - 1) * (SR - 1)) continue;
+        const loc = { x: base.x + dx, y: base.y + dy, z: base.z + dz };
+        try {
+          const b = dimension.getBlock(loc);
+          if (b && (b.typeId === "minecraft:air" || b.typeId === "minecraft:water" ||
+                    b.typeId === "minecraft:flowing_water")) {
+            b.setType("minecraft:obsidian");
+          }
+        } catch (err) {}
+      }
+    }
+  }
+  try {
+    dimension.playSound("random.anvil_land", center);
+  } catch (err) {}
 }
 
 function glowEffect(dimension, center) {
@@ -2506,11 +2700,13 @@ function vacuumEffect(dimension, center) {
 
 function chorusEffect(dimension, center) {
   for (const ent of nearbyEntities(dimension, center, 6)) {
+    const moved = safeTeleport(ent, () => ({
+      x: center.x + (Math.random() - 0.5) * 10,
+      y: center.y + Math.random() * 4,
+      z: center.z + (Math.random() - 0.5) * 10,
+    }));
+    if (!moved) continue;
     try {
-      const dx = (Math.random() - 0.5) * 10;
-      const dy = Math.random() * 4;
-      const dz = (Math.random() - 0.5) * 10;
-      ent.teleport({ x: center.x + dx, y: center.y + dy, z: center.z + dz });
       dimension.playSound("mob.endermen.portal", ent.location);
     } catch (err) {}
   }
@@ -2541,7 +2737,7 @@ function armageddonEffect(dimension, center) {
   radiationZone(dimension, center, { radius: 18, duration: 600, amplifier: 2 });
   shockwaveKnockback(dimension, center, 40, 2.6);
   irradiateEntities(dimension, center, 34, 65);
-  craterBurst(dimension, center, { radius: 60, count: 60, basePower: 18, coreCount: 6, corePower: 20, dome: 5, pointRadius: 4 });
+  carveCrater(dimension, center, { radius: 44, depth: 16, scorch: true });
   nukeImpact(dimension, center, 100, 0.95, 3.2);
 
   // ランダムな追加効果を数個、時間差で連続発動する

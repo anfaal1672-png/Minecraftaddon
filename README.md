@@ -45,6 +45,9 @@ node tools/validate.mjs
 # 回帰テスト (ゲームを起動せずに main.js の挙動を検証)
 node --import ./tools/register-mock.mjs tools/test.mjs
 
+# テクスチャを作り直す (色や紋章を変えたとき)
+node tools/generate-textures.mjs
+
 # 検査とテストを通した上で .mcaddon を作り直す
 ./tools/build.sh
 ```
@@ -60,6 +63,13 @@ Node.js 22 以降が必要です。テストは `tools/mock-minecraft-server.mjs
 2. `BP/blocks/<名前>.json` — ブロック定義
 3. `BP/recipes/<名前>.json` — クラフトレシピ
 4. `BP/loot_tables/blocks/<名前>.json` — 破壊時のドロップ
-5. `RP/textures/blocks/<名前>_top.png` と `_side.png` — テクスチャ
+5. `tools/lib/palettes.mjs` に色と紋章を1行追加し、`node tools/generate-textures.mjs` を実行
+   （テクスチャPNGは手描きせず、ここから生成する。紋章の絵柄は `tools/lib/emblems.mjs`）
 6. `RP/textures/terrain_texture.json` と `RP/blocks.json` — テクスチャの登録
 7. `BP/texts/*.lang` と `RP/texts/*.lang` — 表示名 (BPとRPで同じ内容にする)
+
+### テクスチャの作り
+
+バニラのTNTと同じく「上下が木箱・中央が帯」という 16×16 の構成にしてある。
+木箱の色は種類ごとに変え、帯には内容がわかる紋章（6行×12列）を描く。
+上面は同じ色の木箱に中央だけ紋章色の印を置いてあるので、上から見ても判別できる。

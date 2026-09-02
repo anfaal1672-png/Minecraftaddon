@@ -30,6 +30,21 @@ export const world = {
     projectileHitBlock: makeEvent(),
   },
   beforeEvents: { explosion: makeEvent() },
+  _weather: null,
+  _timeOfDay: 6000,
+  setWeather(type, duration) {
+    // 実機と同じく WeatherType 列挙値以外は受け付けない
+    if (!["Clear", "Rain", "Thunder"].includes(type)) {
+      throw new Error(`invalid WeatherType: ${type}`);
+    }
+    this._weather = { type, duration };
+  },
+  getTimeOfDay() {
+    return this._timeOfDay;
+  },
+  setTimeOfDay(t) {
+    this._timeOfDay = t;
+  },
   getDynamicProperty(key) {
     return this._props.get(key);
   },
