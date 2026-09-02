@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:invisibility_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:glass"
+      },
+      {
+        "item": "minecraft:fermented_spider_eye"
+      }
+    ],
+    "result": {
+      "item": "manytnt:invisibility_tnt",
+      "count": 1
+    }
+  }
+}

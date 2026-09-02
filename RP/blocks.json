@@ -1,0 +1,204 @@
+{
+  "format_version": "1.21.40",
+  "manytnt:mega_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:mini_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:nuke_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:ultra_nuke_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:hydrogen_bomb_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:tsar_bomba_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:antimatter_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:ice_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:poison_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:fire_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:thunder_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:gravity_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:teleport_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:heal_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:confetti_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:rainbow_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:magnet_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:antigravity_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:lava_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:water_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:darkness_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:summon_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:earthquake_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:bouncy_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:web_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:treasure_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:swap_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:confusion_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:blackhole_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:disco_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:ufo_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:fireworks_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:meteor_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:curse_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:grass_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:desert_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:snowgolem_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:bee_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:arrow_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:rocket_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:music_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:tsunami_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:smelter_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:harvest_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:daynight_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:storm_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:xp_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:enderman_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:slime_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:animal_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:iceage_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:fortune_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:builder_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:shaft_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:beam_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:invisibility_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:speed_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:honey_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:scorched_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:feast_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:cactus_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:obsidian_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:glow_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:vacuum_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:chorus_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:armageddon_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:gacha_tnt": {
+    "sound": "grass"
+  }
+}

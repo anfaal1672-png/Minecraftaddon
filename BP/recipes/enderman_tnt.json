@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:enderman_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:ender_pearl"
+      },
+      {
+        "item": "minecraft:ender_pearl"
+      }
+    ],
+    "result": {
+      "item": "manytnt:enderman_tnt",
+      "count": 1
+    }
+  }
+}
