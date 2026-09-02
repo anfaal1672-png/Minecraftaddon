@@ -79,7 +79,22 @@ function loadStats() {
   if (typeof stats.total !== "number") stats.total = 0;
 }
 
+/**
+ * 統計の保存。連鎖爆発では1秒間に100発以上まとめて起きることがあり、
+ * そのたびに JSON へ書き出していると無駄が大きい。
+ * 変更があったら1秒後にまとめて1回だけ書き込むようにする。
+ */
+let statsSavePending = false;
 function saveStats() {
+  if (statsSavePending) return;
+  statsSavePending = true;
+  system.runTimeout(() => {
+    statsSavePending = false;
+    flushStats();
+  }, 20);
+}
+
+function flushStats() {
   try {
     world.setDynamicProperty("manytnt:stats", JSON.stringify(stats));
   } catch (err) {}
@@ -135,6 +150,7 @@ try {
     try {
       if (e.id === "manytnt:stats") {
         loadStats();
+        flushStats();
         const distinctUsed = Object.keys(stats.counts).length;
         const totalTypes = Object.keys(TNT_TABLE).length;
         world.sendMessage(`§e[manytnt] 累計爆発数: §f${stats.total}§e回§r`);
@@ -250,13 +266,16 @@ const FIRE_NEIGHBORS = new Set([
   "minecraft:flowing_lava",
 ]);
 
+// onTick は設置済みTNT1個につき10tickごとに走るので、
+// 呼ばれるたびに配列を作り直さないようここに置いておく
+const NEIGHBOR_OFFSETS = [
+  { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 },
+  { x: 0, y: 1, z: 0 }, { x: 0, y: -1, z: 0 },
+  { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 },
+];
+
 function hasFireOrLavaNeighbor(dimension, loc) {
-  const offsets = [
-    { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 },
-    { x: 0, y: 1, z: 0 }, { x: 0, y: -1, z: 0 },
-    { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 },
-  ];
-  for (const o of offsets) {
+  for (const o of NEIGHBOR_OFFSETS) {
     try {
       const b = dimension.getBlock({ x: loc.x + o.x, y: loc.y + o.y, z: loc.z + o.z });
       if (b && FIRE_NEIGHBORS.has(b.typeId)) return true;
@@ -419,28 +438,58 @@ try {
 /* ------------------------------------------------------------------ */
 const TAG_PREFIX = "manytnt_type:";
 
-function igniteTnt(dimension, blockLoc, typeId, chained = false) {
+/**
+ * その座標の着火権を予約する。既に他の処理が予約済みなら null を返す。
+ * 連鎖爆発では複数の爆発が同じTNTを同時に狙うことがあり、予約を取らないと
+ * 1個のブロックから複数のTNTエンティティが湧いて爆発が増殖してしまうため、
+ * 「着火をスケジュールした時点」で必ず予約を取っておく。
+ */
+function reserveIgnition(dimension, blockLoc) {
+  const key = keyOf(dimension.id, blockLoc);
+  if (litSet.has(key)) return null;
+  litSet.add(key);
+  return key;
+}
+
+function igniteTnt(dimension, blockLoc, typeId, chained = false, reservedKey = null) {
   const cfg = TNT_TABLE[typeId];
-  if (!cfg) return;
+  if (!cfg) {
+    if (reservedKey) litSet.delete(reservedKey);
+    return;
+  }
+  const k = reservedKey ?? reserveIgnition(dimension, blockLoc);
+  if (!k) return; // 既に他の処理が着火を予約済み
+
   if (chained) {
-    if (recentChainIgnitions >= CHAIN_IGNITION_CAP) return; // 安全上限
+    if (recentChainIgnitions >= CHAIN_IGNITION_CAP) {
+      litSet.delete(k); // 安全上限。予約は必ず返す
+      return;
+    }
     recentChainIgnitions++;
   }
-  const k = keyOf(dimension.id, blockLoc);
-  if (litSet.has(k)) return;
-  litSet.add(k);
 
+  // 実際にそのTNTブロックが在ることを着火の条件にする (通常のTNTと同じ)。
+  // これを確認せずに進むと、既に爆発して空気になった座標からもう一度
+  // TNTエンティティが湧いてしまう。
+  let consumed = false;
   try {
     const block = dimension.getBlock(blockLoc);
     if (block && block.typeId === typeId) {
       block.setType("minecraft:air");
+      consumed = true;
     }
   } catch (err) {}
+  if (!consumed) {
+    litSet.delete(k);
+    return;
+  }
+
+  const center = { x: blockLoc.x + 0.5, y: blockLoc.y, z: blockLoc.z + 0.5 };
 
   let effectiveTypeId = typeId;
   let effectiveCfg = cfg;
   if (cfg.isGacha) {
-    const candidates = Object.keys(TNT_TABLE).filter((k) => k !== typeId && !TNT_TABLE[k].isGacha);
+    const candidates = Object.keys(TNT_TABLE).filter((id) => id !== typeId && !TNT_TABLE[id].isGacha);
     effectiveTypeId = candidates[Math.floor(Math.random() * candidates.length)];
     effectiveCfg = TNT_TABLE[effectiveTypeId];
     const shortName = effectiveTypeId.replace(`${NS}:`, "");
@@ -449,8 +498,6 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false) {
     } catch (err) {}
     announce(`§d🎰 ガチャTNT: §e${shortName}§d が出た！§r`);
   }
-
-  const center = { x: blockLoc.x + 0.5, y: blockLoc.y, z: blockLoc.z + 0.5 };
 
   // 着火音 (本家のTNTと同じ導火線の音)
   try {
@@ -488,7 +535,9 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false) {
       try {
         tnt.remove();
       } catch (err) {}
-      finishExplosion(dimension, loc, typeId, cfg);
+      // ガチャTNTで引いた中身をここでも反映させる (以前は引いた種類を告知した上で
+      // ガチャTNT自身の設定で爆発してしまい、連鎖のときだけ中身が出なかった)
+      finishExplosion(dimension, loc, effectiveTypeId, effectiveCfg);
     }, shortFuse);
   }
 
@@ -531,66 +580,70 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false) {
 /*  本来の爆発をキャンセルして、代わりにこちらで威力や特殊効果を適用する。*/
 /*  タグの無い(=本物の)TNTや、クリーパー等の爆発には一切干渉しない。     */
 /* ------------------------------------------------------------------ */
-world.beforeEvents.explosion.subscribe((event) => {
-  try {
-    const source = event.source;
-    const dimension = event.dimension;
+try {
+  world.beforeEvents.explosion.subscribe((event) => {
+    try {
+      const source = event.source;
+      const dimension = event.dimension;
 
-    let tag;
-    if (source && source.typeId === "minecraft:tnt") {
-      try {
-        tag = source.getTags().find((t) => t.startsWith(TAG_PREFIX));
-      } catch (err) {}
-    }
+      let tag;
+      if (source && source.typeId === "minecraft:tnt") {
+        try {
+          tag = source.getTags().find((t) => t.startsWith(TAG_PREFIX));
+        } catch (err) {}
+      }
 
-    if (tag) {
-      // うちのタグ付きTNT: 本来の爆発をキャンセルして独自処理に差し替える
-      const typeId = tag.slice(TAG_PREFIX.length);
-      const cfg = TNT_TABLE[typeId];
-      if (!cfg) return;
+      if (tag) {
+        // うちのタグ付きTNT: 本来の爆発をキャンセルして独自処理に差し替える
+        const typeId = tag.slice(TAG_PREFIX.length);
+        const cfg = TNT_TABLE[typeId];
+        if (!cfg) return;
 
-      event.cancel = true;
+        event.cancel = true;
 
-      let loc;
-      try {
-        loc = { ...source.location };
-      } catch (err) {
+        let loc;
+        try {
+          loc = { ...source.location };
+        } catch (err) {
+          return;
+        }
+
+        system.run(() => finishExplosion(dimension, loc, typeId, cfg));
         return;
       }
 
-      system.run(() => finishExplosion(dimension, loc, typeId, cfg));
-      return;
-    }
-
-    // ここに来るのは「うちのTNTではない爆発」= 本物のバニラTNT・クリーパー・
-    // ベッド・他アドオンの爆発など。こちらは何もキャンセルせず通常通り爆発させるが、
-    // 巻き込まれた場所の近くにうちのTNTがあれば、通常TNT同様に連鎖着火させる。
-    try {
-      let epicenter = null;
-      if (source) {
-        try {
-          epicenter = { ...source.location };
-        } catch (err) {}
-      }
-      if (!epicenter) {
-        try {
-          const blocks = event.getImpactedBlocks ? event.getImpactedBlocks() : [];
-          if (blocks && blocks.length > 0) {
-            epicenter = { x: blocks[0].x, y: blocks[0].y, z: blocks[0].z };
-          }
-        } catch (err) {}
-      }
-      if (epicenter) {
-        const loc = {
-          x: Math.floor(epicenter.x),
-          y: Math.floor(epicenter.y),
-          z: Math.floor(epicenter.z),
-        };
-        system.run(() => chainReactionCheck(dimension, loc));
-      }
+      // ここに来るのは「うちのTNTではない爆発」= 本物のバニラTNT・クリーパー・
+      // ベッド・他アドオンの爆発など。こちらは何もキャンセルせず通常通り爆発させるが、
+      // 巻き込まれた場所の近くにうちのTNTがあれば、通常TNT同様に連鎖着火させる。
+      try {
+        let epicenter = null;
+        if (source) {
+          try {
+            epicenter = { ...source.location };
+          } catch (err) {}
+        }
+        if (!epicenter) {
+          try {
+            const blocks = event.getImpactedBlocks ? event.getImpactedBlocks() : [];
+            if (blocks && blocks.length > 0) {
+              epicenter = { x: blocks[0].x, y: blocks[0].y, z: blocks[0].z };
+            }
+          } catch (err) {}
+        }
+        if (epicenter) {
+          const loc = {
+            x: Math.floor(epicenter.x),
+            y: Math.floor(epicenter.y),
+            z: Math.floor(epicenter.z),
+          };
+          system.run(() => chainReactionCheck(dimension, loc));
+        }
+      } catch (err) {}
     } catch (err) {}
-  } catch (err) {}
-});
+  });
+} catch (err) {
+  console.warn(`manytnt: explosion hook registration failed: ${err}`);
+}
 
 function finishExplosion(dimension, center, typeId, cfg) {
   recordExplosion(typeId);
@@ -647,10 +700,13 @@ function chainReactionCheck(dimension, center) {
           continue;
         }
         if (!blk || !TNT_TABLE[blk.typeId]) continue;
-        const k = keyOf(dimension.id, loc);
-        if (litSet.has(k)) continue;
+        // 着火は数tick後だが、予約はいま取る。こうしないと、その待ち時間の間に
+        // 別の爆発が同じTNTをもう一度スケジュールしてしまい二重に爆発する。
+        const k = reserveIgnition(dimension, loc);
+        if (!k) continue;
+        const typeId = blk.typeId;
         const delay = 2 + Math.floor(Math.random() * 10);
-        system.runTimeout(() => igniteTnt(dimension, loc, blk.typeId, true), delay);
+        system.runTimeout(() => igniteTnt(dimension, loc, typeId, true, k), delay);
       }
     }
   }
@@ -661,9 +717,39 @@ function chainReactionCheck(dimension, center) {
 /* ------------------------------------------------------------------ */
 function nearbyEntities(dimension, center, radius, includePlayers = true) {
   try {
-    return dimension.getEntities({ location: center, maxDistance: radius });
+    const found = dimension.getEntities({ location: center, maxDistance: radius });
+    if (includePlayers) return found;
+    return found.filter((ent) => ent.typeId !== "minecraft:player");
   } catch (err) {
     return [];
+  }
+}
+
+/**
+ * エンティティを指定したベクトルの方向へ押し出す。
+ *
+ * Entity.applyImpulse() はプレイヤーに対しては未実装で、呼ぶと例外を投げる。
+ * これまで吸い込み・打ち上げ系の処理はすべて applyImpulse を直接呼んでいたため、
+ * プレイヤーにだけ全く効かず、さらに同じ try ブロック内でその後に続く
+ * addEffect() まで巻き添えで飛ばされていた
+ * (例: 反重力TNTがプレイヤーには浮遊効果すら付かなかった)。
+ *
+ * プレイヤーには applyKnockback(水平ベクトル, 垂直の強さ) を使えば
+ * 同じ動きを再現できるので、ここで一括して振り分ける。
+ */
+function pushEntity(ent, vec) {
+  try {
+    if (ent.typeId === "minecraft:player") {
+      ent.applyKnockback({ x: vec.x, z: vec.z }, vec.y);
+    } else {
+      ent.applyImpulse(vec);
+    }
+  } catch (err) {
+    // applyKnockback が旧シグネチャ (dx, dz, 水平強さ, 垂直強さ) の端末向けの保険
+    try {
+      const h = Math.sqrt(vec.x * vec.x + vec.z * vec.z);
+      ent.applyKnockback(h > 0 ? vec.x / h : 0, h > 0 ? vec.z / h : 0, h, vec.y);
+    } catch (err2) {}
   }
 }
 
@@ -676,7 +762,7 @@ function pullNearbyEntities(dimension, center, radius) {
       const dz = center.z - loc.z;
       const dist = Math.max(0.5, Math.sqrt(dx * dx + dy * dy + dz * dz));
       const strength = 0.12;
-      ent.applyImpulse({
+      pushEntity(ent, {
         x: (dx / dist) * strength,
         y: (dy / dist) * strength * 0.6,
         z: (dz / dist) * strength,
@@ -1140,7 +1226,7 @@ function irradiateEntities(dimension, center, radius, maxDamage) {
         const dmg = Math.max(2, maxDamage * damageScale * falloff);
         ent.applyDamage(dmg, { cause: "entityExplosion" });
         if (launch && falloff > 0.15) {
-          ent.applyImpulse({ x: 0, y: 0.6 * falloff, z: 0 });
+          pushEntity(ent, { x: 0, y: 0.6 * falloff, z: 0 });
         }
       } catch (err) {}
     }
@@ -1401,7 +1487,7 @@ function magnetBurstEffect(dimension, center) {
 function antiGravityEffect(dimension, center) {
   for (const ent of nearbyEntities(dimension, center, 8)) {
     try {
-      ent.applyImpulse({ x: 0, y: 1.4, z: 0 });
+      pushEntity(ent, { x: 0, y: 1.4, z: 0 });
       ent.addEffect("minecraft:levitation", 60, { amplifier: 4, showParticles: true });
     } catch (err) {}
   }
@@ -1515,7 +1601,7 @@ function earthquakeEffect(dimension, center) {
 function bouncyEffect(dimension, center) {
   for (const ent of nearbyEntities(dimension, center, 6)) {
     try {
-      ent.applyImpulse({ x: (Math.random() - 0.5) * 0.4, y: 1.6, z: (Math.random() - 0.5) * 0.4 });
+      pushEntity(ent, { x: (Math.random() - 0.5) * 0.4, y: 1.6, z: (Math.random() - 0.5) * 0.4 });
       ent.addEffect("minecraft:jump_boost", 100, { amplifier: 3, showParticles: false });
     } catch (err) {}
   }
@@ -1631,7 +1717,7 @@ function blackholeEffect(dimension, center) {
         const dz = center.z - loc.z;
         const dist = Math.max(0.5, Math.sqrt(dx * dx + dy * dy + dz * dz));
         const strength = 0.3;
-        ent.applyImpulse({
+        pushEntity(ent, {
           x: (dx / dist) * strength,
           y: (dy / dist) * strength * 0.5,
           z: (dz / dist) * strength,
@@ -2145,9 +2231,7 @@ function slimeEffect(dimension, center) {
     } catch (err) {}
   }
   for (const ent of nearbyEntities(dimension, center, 5)) {
-    try {
-      ent.applyImpulse({ x: 0, y: 0.8, z: 0 });
-    } catch (err) {}
+    pushEntity(ent, { x: 0, y: 0.8, z: 0 });
   }
 }
 

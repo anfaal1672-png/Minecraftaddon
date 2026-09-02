@@ -2,7 +2,7 @@
   "format_version": 2,
   "header": {
     "name": "いろんなTNT追加アドオン",
-    "description": "33種類のユニークなTNTを追加します (BP)",
+    "description": "67種類のユニークなTNTを追加します (BP)",
     "uuid": "5b0948bc-bb22-479e-a059-8ac3194998eb",
     "version": [30, 0, 0],
     "min_engine_version": [1, 21, 90]
