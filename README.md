@@ -70,22 +70,28 @@ Node.js 22 以降が必要です。テストは `tools/mock-minecraft-server.mjs
 
 ### テクスチャの作り
 
-作りは Mojang が公開しているバニラのリソースパック
-（[Mojang/bedrock-samples](https://github.com/Mojang/bedrock-samples) の
-`resource_pack/textures/blocks/tnt_side.png` ほか）を読んで合わせてある。
+**バニラのTNTのテクスチャそのものを土台にしている。**
+`tools/generate-textures.mjs` がバニラの `tnt_side.png` / `tnt_top.png` /
+`tnt_bottom.png` を読み込み、使われている13色を「役割」に分けて、
+そのTNTの色に差し替える。側面の帯の "TNT" の文字だけを紋章に置き換える。
 
-- **側面**: 本体は4列周期の縦縞（`明・明・暗・最暗`）。行によって縞全体が1段ずれ、
-  0行目は1段明るく、11行目と15行目は1段暗い。帯は 5〜10行の6ドットで、
-  上下に暗い区切り線は入らない。文字が乗るのは帯の内側 6〜9行だけで、
-  5行目は文字の無い白、10行目はひとつ沈んだ白。
-- **上面**: 4×4タイル `地明明地 / 明灰灰暗 / 明灰灰最暗 / 暗暗最暗最暗`。
-  中央に導火線の差し込み口が黒い塊として入り、まわりに煤が散る。
-- **底面**: 4×4タイル `暗地地暗 / 地灰灰最暗 / 地灰灰最暗 / 最暗×4`。
+縞の周期・帯のムラ・上面の煤の散り方といった細部は実物そのままなので、
+バニラのTNTと並べても違和感が出ない（上面と底面は実物と1ドットも違わない
+並びになり、側面も紋章部分を除いて完全に一致する）。
 
-種類ごとに変えるのは本体の色と、帯に描く紋章（4行×12列）だけ。
+種類ごとに変えるのは**地の色ひとつと、帯に描く紋章（4行×12列）だけ**。
+残りの12色は地の色から自動で作られる。
 
-> Mojang のテクスチャは `(c) Mojang AB. All rights reserved.` で
-> Minecraft EULA の対象のため、**このリポジトリには一切含めていない**。
-> 参照したのは構造（縞の周期・帯の位置・タイルの並び）だけで、
-> 色と絵柄は `tools/` の生成器で作っている。構造を確認し直したいときは
-> 上記リポジトリを別途 clone すること。
+> 土台にするテクスチャは Mojang の配布物
+> （[Mojang/bedrock-samples](https://github.com/Mojang/bedrock-samples)）で、
+> `(c) Mojang AB. All rights reserved.` / Minecraft EULA の対象。
+> **このリポジトリには含めていない**ので、テクスチャを生成し直すときは
+> 手元に clone しておくこと。
+>
+> ```sh
+> git clone --depth 1 https://github.com/Mojang/bedrock-samples ../bedrock-samples
+> ```
+>
+> 別の場所に置いてある場合は `VANILLA_RP=/path/to/resource_pack/textures/blocks`
+> で指定できる。生成済みのテクスチャは `RP/textures/blocks/` にコミット済みなので、
+> 色や紋章を変えないのであれば clone は不要。

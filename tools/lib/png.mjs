@@ -56,6 +56,91 @@ export function encodePng(w, h, rgba) {
   ]);
 }
 
+/**
+ * PNG のデコード。バニラのテクスチャを読むためだけのものなので、
+ * 8bit RGBA・インタレース無しにだけ対応する (実際それしか来ない)。
+ */
+export function decodePng(buf) {
+  const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (sig.some((b, i) => buf[i] !== b)) throw new Error("PNG ではない");
+
+  let i = 8;
+  let width = 0;
+  let height = 0;
+  let depth = 0;
+  let colorType = 0;
+  const idat = [];
+  while (i < buf.length) {
+    const len = buf.readUInt32BE(i);
+    const type = buf.toString("ascii", i + 4, i + 8);
+    const data = buf.subarray(i + 8, i + 8 + len);
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      depth = data[8];
+      colorType = data[9];
+      if (data[12] !== 0) throw new Error("インタレースされた PNG には対応していない");
+    } else if (type === "IDAT") {
+      idat.push(data);
+    } else if (type === "IEND") {
+      break;
+    }
+    i += 12 + len;
+  }
+  if (depth !== 8 || colorType !== 6) {
+    throw new Error(`8bit RGBA の PNG だけに対応 (depth=${depth}, colorType=${colorType})`);
+  }
+
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const bpp = 4;
+  const stride = width * bpp;
+  const out = Buffer.alloc(height * stride);
+  let p = 0;
+  for (let y = 0; y < height; y++) {
+    const filter = raw[p++];
+    const line = raw.subarray(p, p + stride);
+    p += stride;
+    const cur = out.subarray(y * stride, (y + 1) * stride);
+    const prev = y > 0 ? out.subarray((y - 1) * stride, y * stride) : null;
+    for (let x = 0; x < stride; x++) {
+      const a = x >= bpp ? cur[x - bpp] : 0;
+      const b = prev ? prev[x] : 0;
+      const c = prev && x >= bpp ? prev[x - bpp] : 0;
+      let v = line[x];
+      if (filter === 1) v += a;
+      else if (filter === 2) v += b;
+      else if (filter === 3) v += (a + b) >> 1;
+      else if (filter === 4) {
+        const est = a + b - c;
+        const da = Math.abs(est - a);
+        const db = Math.abs(est - b);
+        const dc = Math.abs(est - c);
+        v += da <= db && da <= dc ? a : db <= dc ? b : c;
+      } else if (filter !== 0) {
+        throw new Error(`未知の PNG フィルタ: ${filter}`);
+      }
+      cur[x] = v & 0xff;
+    }
+  }
+  return { width, height, data: out };
+}
+
+/** デコードした PNG を "#rrggbb" の二次元配列にする (透明は null) */
+export function toHexGrid({ width, height, data }) {
+  const grid = [];
+  for (let y = 0; y < height; y++) {
+    const row = [];
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      row.push(data[i + 3] < 128
+        ? null
+        : "#" + [data[i], data[i + 1], data[i + 2]].map((v) => v.toString(16).padStart(2, "0")).join(""));
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
 /** 描画用のキャンバス。put(x, y, "#rrggbb") で1ピクセル置く */
 export function canvas(size = 16) {
   const data = new Uint8Array(size * size * 4);
