@@ -13,7 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { canvas, shade, mix, isLight } from "./lib/png.mjs";
+import { canvas, shade, mix, isLight, noise } from "./lib/png.mjs";
 import { EMBLEMS, assertEmblems } from "./lib/emblems.mjs";
 import { PALETTES, RAINBOW_ROWS, BOTTOM } from "./lib/palettes.mjs";
 
@@ -21,33 +21,34 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "RP/textures/blocks");
 
 /* ------------------------------------------------------------------ */
-/*  木箱の断面。バニラのTNTと同じ「上下が板・中央が帯」の構成にする      */
+/*  16x16 の断面。バニラのTNTと同じ構成にする。                          */
 /*                                                                     */
-/*    0        枠 (いちばん暗い)                                        */
-/*    1 - 3    板                                                       */
-/*    4        帯のふち                                                 */
-/*    5 - 10   帯 … ここに 6行×12列 の紋章を描く                        */
-/*    11       帯のふち                                                 */
-/*    12 - 14  板                                                       */
-/*    15       枠                                                       */
+/*  バニラのTNTは木箱ではないので、板の継ぎ目のような縦線は入らない。     */
+/*  一様な地の色に細かい斑点が散っているだけの面で、中央に細い帯があり、  */
+/*  帯の上下だけが1ドットの暗い線で区切られている。                      */
+/*                                                                     */
+/*    0 - 4    本体 (斑点)                                              */
+/*    5        帯の上のふち                                             */
+/*    6 - 9    帯 … ここに 4行×12列 の紋章を描く                        */
+/*    10       帯の下のふち                                             */
+/*    11 - 15  本体 (斑点)                                              */
 /* ------------------------------------------------------------------ */
-const BAND_TOP = 5;
+const BAND_TOP = 6;
+const BAND_BOTTOM = 9;
 const BAND_LEFT = 2;
 
-/** crate 一色から、影・ハイライト・帯・紋章の色を組み立てる */
+/** body 一色から、斑点・帯・紋章の色を組み立てる */
 function buildPalette(spec) {
-  const crate = spec.crate;
-  const band = spec.band ?? mix("#f2ece0", crate, 0.14);
-  const ink = spec.ink ?? (isLight(band) ? shade(crate, -0.55) : shade(crate, 0.62));
+  const body = spec.crate;
+  const band = spec.band ?? mix("#f0eade", body, 0.10);
+  const ink = spec.ink ?? (isLight(band) ? shade(body, -0.6) : shade(body, 0.66));
   return {
-    crate,
-    crateLight: shade(crate, 0.18),
-    crateGrain: shade(crate, -0.14),
-    crateDark: shade(crate, -0.32),
-    edge: shade(crate, -0.52),
+    body,
+    bodyLight: shade(body, 0.11),
+    bodySpeck: shade(body, -0.10),
+    bodyDark: shade(body, -0.21),
     band,
-    bandShade: shade(band, -0.12),
-    bandEdge: shade(band, -0.42),
+    bandEdge: shade(band, -0.45),
     ink,
     inkLight: shade(ink, 0.45),
     inkDark: shade(ink, -0.38),
@@ -55,34 +56,37 @@ function buildPalette(spec) {
   };
 }
 
-/** 板の1ピクセル。縦の継ぎ目とハイライト、それに軽い木目を入れる */
-function cratePixel(x, y, pal) {
-  const base = pal.style === "rainbow" ? RAINBOW_ROWS[y % RAINBOW_ROWS.length] : null;
+/** 本体の1ピクセル。バニラと同じく、規則的な線ではなく細かい斑点で質感を出す */
+function bodyPixel(x, y, pal) {
+  const base = pal.style === "rainbow"
+    ? RAINBOW_ROWS[Math.min(RAINBOW_ROWS.length - 1, Math.floor((y < 6 ? y : y - 5) / 2))]
+    : null;
+  const n = noise(x, y);
   if (base) {
-    if (x === 3 || x === 7 || x === 11 || x === 15) return shade(base, -0.3);
-    if (x === 0 || x === 4 || x === 8 || x === 12) return shade(base, 0.18);
+    if (n < 0.16) return shade(base, -0.26);
+    if (n < 0.30) return shade(base, 0.16);
     return base;
   }
-  if (x === 3 || x === 7 || x === 11 || x === 15) return pal.crateDark;
-  if (x === 0 || x === 4 || x === 8 || x === 12) return pal.crateLight;
-  if ((x * 7 + y * 5) % 9 === 0) return pal.crateGrain;
-  return pal.crate;
+  if (n < 0.10) return pal.bodyDark;
+  if (n < 0.28) return pal.bodySpeck;
+  if (n < 0.40) return pal.bodyLight;
+  return pal.body;
 }
 
 function drawSide(pal, emblem) {
   const c = canvas(16);
   for (let y = 0; y < 16; y++) {
     for (let x = 0; x < 16; x++) {
-      if (y === 0 || y === 15) c.put(x, y, pal.edge);
-      else if (y === 4 || y === 11) c.put(x, y, pal.bandEdge);
-      else if (y >= BAND_TOP && y <= 10) c.put(x, y, y === BAND_TOP ? pal.band : pal.bandShade);
-      else c.put(x, y, cratePixel(x, y, pal));
+      if (y === BAND_TOP - 1 || y === BAND_BOTTOM + 1) c.put(x, y, pal.bandEdge);
+      else if (y >= BAND_TOP && y <= BAND_BOTTOM) {
+        // 帯はごくわずかに上が明るく、下が沈む
+        c.put(x, y, y === BAND_TOP ? shade(pal.band, 0.08) : y === BAND_BOTTOM ? shade(pal.band, -0.07) : pal.band);
+      } else c.put(x, y, bodyPixel(x, y, pal));
     }
   }
   // 帯の上に紋章を重ねる
-  const rows = EMBLEMS[emblem];
   const inkOf = { X: pal.ink, o: pal.inkLight, "#": pal.inkDark };
-  rows.forEach((row, ry) => {
+  EMBLEMS[emblem].forEach((row, ry) => {
     [...row].forEach((ch, rx) => {
       const color = inkOf[ch];
       if (color) c.put(BAND_LEFT + rx, BAND_TOP + ry, color);
@@ -91,27 +95,19 @@ function drawSide(pal, emblem) {
   return c;
 }
 
-/** 上面/底面。3×3 の木枠に、中央だけ紋章色を置いて上からでも種類がわかるようにする */
-function drawLid(pal, { marker = true } = {}) {
+/**
+ * 上面・底面。バニラのTNTの上下面と同じく、帯も文字も無い斑点だけの一枚面。
+ * 種類は本体の色で見分ける。
+ */
+function drawTop(pal) {
   const c = canvas(16);
   for (let y = 0; y < 16; y++) {
     for (let x = 0; x < 16; x++) {
-      if (x % 5 === 0 || y % 5 === 0) {
-        c.put(x, y, pal.edge);
-        continue;
-      }
-      const cx = x % 5;
-      const cy = y % 5;
-      let col = pal.style === "rainbow" ? RAINBOW_ROWS[(Math.floor(y / 5) * 2 + Math.floor(x / 5)) % RAINBOW_ROWS.length] : pal.crate;
-      if (cx === 1 || cy === 1) col = shade(col, 0.16);
-      else if (cx === 4 || cy === 4) col = shade(col, -0.28);
-      else if ((x * 7 + y * 5) % 9 === 0) col = shade(col, -0.12);
+      // 上下面は側面よりわずかに沈ませて、面の向きの差を出す
+      let col = shade(bodyPixel(x, y, pal), -0.06);
+      if (x === 0 || y === 0 || x === 15 || y === 15) col = shade(col, -0.16);
       c.put(x, y, col);
     }
-  }
-  if (marker) {
-    for (let y = 6; y <= 9; y++) for (let x = 6; x <= 9; x++) c.put(x, y, pal.ink);
-    for (let y = 7; y <= 8; y++) for (let x = 7; x <= 8; x++) c.put(x, y, pal.inkLight);
   }
   return c;
 }
@@ -137,21 +133,21 @@ for (const [type, spec] of Object.entries(PALETTES)) {
   }
   const pal = buildPalette(spec);
   fs.writeFileSync(path.join(outDir, `${type}_side.png`), drawSide(pal, spec.emblem).toPng());
-  fs.writeFileSync(path.join(outDir, `${type}_top.png`), drawLid(pal).toPng());
+  fs.writeFileSync(path.join(outDir, `${type}_top.png`), drawTop(pal).toPng());
   written += 2;
 
   if (preview) {
     console.log(`\n── ${type} (${spec.emblem}) ──`);
     const rows = EMBLEMS[spec.emblem];
     const glyph = { ".": "·", X: "█", o: "▓", "#": "▒" };
-    console.log("  板 " + pal.crate + " / 帯 " + pal.band + " / 紋章 " + pal.ink);
+    console.log("  本体 " + pal.body + " / 帯 " + pal.band + " / 紋章 " + pal.ink);
     for (const r of rows) console.log("    " + [...r].map((ch) => glyph[ch]).join(""));
   }
 }
 
 // 底面は全種共通
 if (!only) {
-  fs.writeFileSync(path.join(outDir, "tnt_bottom.png"), drawLid(buildPalette(BOTTOM), { marker: false }).toPng());
+  fs.writeFileSync(path.join(outDir, "tnt_bottom.png"), drawTop(buildPalette(BOTTOM)).toPng());
   written++;
 }
 

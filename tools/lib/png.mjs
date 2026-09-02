@@ -92,6 +92,17 @@ export function mix(a, b, t) {
   return toHex([ra + (rb - ra) * t, ga + (gb - ga) * t, ba + (bb - ba) * t]);
 }
 
+/**
+ * 座標から決まる 0〜1 の擬似乱数。
+ * バニラのTNTのように面へ細かい斑点を散らすのに使う。
+ * 毎回同じ模様になるので、生成し直しても差分が出ない。
+ */
+export function noise(x, y, seed = 0) {
+  let h = (x * 374761393 + y * 668265263 + seed * 2246822519) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+
 /** 明るい色かどうか (帯の上に置く文字色を決めるのに使う) */
 export function isLight(hex) {
   const [r, g, b] = parse(hex);
