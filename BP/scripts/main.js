@@ -431,12 +431,29 @@ try {
 }
 
 /* ------------------------------------------------------------------ */
-/*  着火: 本物の "minecraft:tnt" エンティティを召喚する。                */
-/*  導火線の長さ・音・点滅・重力で落ちる/爆風で吹き飛ぶ物理挙動は        */
-/*  すべてバニラ本来のTNTエンティティがそのまま処理するので、            */
-/*  通常のTNTと完全に同じ挙動になる。                                   */
+/*  着火: 自前の "manytnt:primed_tnt" エンティティを召喚する。           */
+/*                                                                     */
+/*  以前はバニラの minecraft:tnt をそのまま召喚していたが、飛んでいる間の */
+/*  見た目がエンジン側で固定されており、どのTNTに火を点けても普通のTNTに */
+/*  見えてしまっていた。バニラのTNTエンティティの中身は                  */
+/*  explode / physics / collision_box / pushable という普通のコンポーネント */
+/*  だけなので、同じ構成の自作エンティティ (BP/entities/primed_tnt.json) を */
+/*  用意すれば、挙動はそのままに見た目だけ差し替えられる。               */
+/*                                                                     */
+/*  導火線の長さ(4秒)・重力で落ちる/爆風で吹き飛ぶ物理挙動・ピストンで   */
+/*  押される仕様は、すべてバニラと同じコンポーネント設定に揃えてある。   */
+/*  連鎖着火で導火線が短くなる仕様も、バニラと同じ component_group を    */
+/*  イベントで足すことで再現している。                                  */
 /* ------------------------------------------------------------------ */
+const PRIMED_TNT = `${NS}:primed_tnt`;
 const TAG_PREFIX = "manytnt_type:";
+
+/**
+ * 起爆中エンティティのテクスチャは、エンティティプロパティ manytnt:kind に
+ * 入れた「TNT_TABLE の何番目か」でレンダーコントローラが選ぶ。
+ * RP 側の一覧も同じ並びから生成しているので、ここがずれることはない。
+ */
+const TNT_KIND_INDEX = new Map(Object.keys(TNT_TABLE).map((id, i) => [id, i]));
 
 /**
  * その座標の着火権を予約する。既に他の処理が予約済みなら null を返す。
@@ -506,9 +523,12 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false, reservedKey = n
 
   let tnt = null;
   try {
-    // 本物のバニラTNTエンティティを召喚。導火線・点滅・物理挙動はこれがそのまま担う
-    tnt = dimension.spawnEntity("minecraft:tnt", center);
+    tnt = dimension.spawnEntity(PRIMED_TNT, center);
     tnt.addTag(TAG_PREFIX + effectiveTypeId);
+    // 飛んでいる間もそのTNTの見た目になるように、種類の番号を渡す
+    try {
+      tnt.setProperty(`${NS}:kind`, TNT_KIND_INDEX.get(effectiveTypeId) ?? 0);
+    } catch (err) {}
     if (effectiveCfg.launchUp) {
       try {
         tnt.applyImpulse({ x: 0, y: 1.8, z: 0 });
@@ -521,24 +541,12 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false, reservedKey = n
 
   if (chained) {
     // 通常のTNTと同じ仕様: 他の爆発に巻き込まれて着火した場合、
-    // 導火線は 10〜30 tick (0.5〜1.5秒) とかなり短くなる。
-    // バニラのTNTエンティティ自体の導火線(80tick固定)は script からは
-    // 変更できないため、こちらで先回りして早期に爆発させることで再現する。
-    const shortFuse = 10 + Math.floor(Math.random() * 21);
-    system.runTimeout(() => {
-      let loc;
-      try {
-        loc = { ...tnt.location };
-      } catch (err) {
-        return; // 既に何らかの理由で消えている
-      }
-      try {
-        tnt.remove();
-      } catch (err) {}
-      // ガチャTNTで引いた中身をここでも反映させる (以前は引いた種類を告知した上で
-      // ガチャTNT自身の設定で爆発してしまい、連鎖のときだけ中身が出なかった)
-      finishExplosion(dimension, loc, effectiveTypeId, effectiveCfg);
-    }, shortFuse);
+    // 導火線は 0.5〜2秒とかなり短くなる。バニラのTNTと同じ component_group を
+    // 足すことで再現しているので、以前のように script 側で先回りして
+    // エンティティを消す必要はなくなった。
+    try {
+      tnt.triggerEvent(`${NS}:short_fuse`);
+    } catch (err) {}
   }
 
   // 飛んでいる間、色つきパーティクルで種類がわかるようにする。
@@ -575,7 +583,7 @@ function igniteTnt(dimension, blockLoc, typeId, chained = false, reservedKey = n
 
 /* ------------------------------------------------------------------ */
 /*  爆発の瞬間を横取りする。                                            */
-/*  minecraft:tnt エンティティが爆発すると world.beforeEvents.explosion */
+/*  起爆中エンティティが爆発すると world.beforeEvents.explosion         */
 /*  が発火するので、それが「うちのタグ付きTNT」だった場合だけ            */
 /*  本来の爆発をキャンセルして、代わりにこちらで威力や特殊効果を適用する。*/
 /*  タグの無い(=本物の)TNTや、クリーパー等の爆発には一切干渉しない。     */
@@ -587,7 +595,7 @@ try {
       const dimension = event.dimension;
 
       let tag;
-      if (source && source.typeId === "minecraft:tnt") {
+      if (source && source.typeId === PRIMED_TNT) {
         try {
           tag = source.getTags().find((t) => t.startsWith(TAG_PREFIX));
         } catch (err) {}

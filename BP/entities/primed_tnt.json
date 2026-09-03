@@ -1,0 +1,65 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "manytnt:primed_tnt",
+      "is_experimental": false,
+      "is_summonable": true,
+      "is_spawnable": false,
+      "spawn_category": "misc",
+      "properties": {
+        "manytnt:kind": {
+          "type": "int",
+          "range": [0, 127],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "height": 0.98,
+        "width": 0.98
+      },
+      "minecraft:conditional_bandwidth_optimization": {
+        "default_values": {
+          "max_dropped_ticks": 5,
+          "max_optimized_distance": 80.0,
+          "use_motion_prediction_hints": true
+        }
+      },
+      "minecraft:explode": {
+        "causes_fire": false,
+        "fuse_lit": true,
+        "power": 4,
+        "fuse_length": 4
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:type_family": {
+        "family": ["tnt", "inanimate"]
+      }
+    },
+    "component_groups": {
+      "manytnt:short_fuse": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": {
+            "range_min": 0.5,
+            "range_max": 2.0
+          }
+        }
+      }
+    },
+    "events": {
+      "manytnt:short_fuse": {
+        "add": { "component_groups": ["manytnt:short_fuse"] }
+      }
+    }
+  }
+}

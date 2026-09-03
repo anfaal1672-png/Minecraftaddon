@@ -20,9 +20,11 @@ import { canvas, shade, mix, isLight } from "./lib/png.mjs";
 import { EMBLEMS, assertEmblems } from "./lib/emblems.mjs";
 import { PALETTES, RAINBOW_ROWS, BOTTOM } from "./lib/palettes.mjs";
 import { loadVanillaTnt, GLYPH_ROLES, NOT_FOUND_MESSAGE } from "./lib/vanilla.mjs";
+import { tntTypesInOrder } from "./lib/tnt-types.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "RP/textures/blocks");
+const entityTexDir = path.join(root, "RP/textures/entity/tnt");
 
 /* 帯に文字が乗る範囲。バニラの "TNT" が置かれているのと同じ位置 */
 const GLYPH_TOP = 6;
@@ -100,6 +102,26 @@ function drawGlyph(c, pal, emblem) {
   });
 }
 
+/*
+ * 起爆中のエンティティ用のテクスチャ。
+ *
+ * ブロックは面ごとに別ファイルでよいが、エンティティのモデルは
+ * 1枚の画像から UV で切り出すので、6面ぶんを 64×32 に並べた1枚にまとめる。
+ * 並びは RP/models/entity/primed_tnt.geo.json の UV 指定と対になっている。
+ *
+ *     (0,0)          (16,0)         (32,0)         (48,0)
+ *       .            上面           底面             .
+ *     (0,16)         (16,16)        (32,16)        (48,16)
+ *      西面           北面           東面           南面
+ */
+function buildEntityAtlas(side, top, bottom) {
+  const atlas = canvas(64, 32);
+  atlas.blit(top, 16, 0);
+  atlas.blit(bottom, 32, 0);
+  for (const x of [0, 16, 32, 48]) atlas.blit(side, x, 16);
+  return atlas;
+}
+
 /* ------------------------------------------------------------------ */
 const emblemProblems = assertEmblems();
 if (emblemProblems.length) {
@@ -121,10 +143,28 @@ if (vanilla.unknown.length) {
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
 
 fs.mkdirSync(outDir, { recursive: true });
-let written = 0;
+fs.mkdirSync(entityTexDir, { recursive: true });
 
-for (const [type, spec] of Object.entries(PALETTES)) {
+// 起爆中エンティティのテクスチャ選択は main.js の TNT_TABLE の並び順で行うので、
+// 一覧もその順で作る
+const order = tntTypesInOrder();
+const missing = order.filter((t) => !PALETTES[t]);
+if (missing.length) {
+  console.error(`  ❌ main.js にあるのに palettes.mjs に無い: ${missing.join(", ")}`);
+  process.exit(1);
+}
+const extra = Object.keys(PALETTES).filter((t) => !order.includes(t));
+if (extra.length) {
+  console.error(`  ❌ palettes.mjs にあるのに main.js に無い: ${extra.join(", ")}`);
+  process.exit(1);
+}
+
+let written = 0;
+const bottomFace = paint(vanilla.faces.bottom, buildPalette(BOTTOM));
+
+for (const type of order) {
   if (only && type !== only) continue;
+  const spec = PALETTES[type];
   if (!EMBLEMS[spec.emblem]) {
     console.error(`  ❌ ${type}: 紋章 "${spec.emblem}" が見つからない`);
     process.exit(1);
@@ -133,20 +173,64 @@ for (const [type, spec] of Object.entries(PALETTES)) {
 
   const side = paint(vanilla.faces.side, pal, { blankGlyph: true });
   drawGlyph(side, pal, spec.emblem);
-  fs.writeFileSync(path.join(outDir, `${type}_side.png`), side.toPng());
+  const top = paint(vanilla.faces.top, pal);
 
-  fs.writeFileSync(path.join(outDir, `${type}_top.png`), paint(vanilla.faces.top, pal).toPng());
-  written += 2;
+  fs.writeFileSync(path.join(outDir, `${type}_side.png`), side.toPng());
+  fs.writeFileSync(path.join(outDir, `${type}_top.png`), top.toPng());
+  // 起爆中のエンティティは全面を1枚にまとめたものを使う
+  fs.writeFileSync(path.join(entityTexDir, `${type}.png`), buildEntityAtlas(side, top, bottomFace).toPng());
+  written += 3;
 }
 
 // 底面は全種共通
 if (!only) {
-  fs.writeFileSync(
-    path.join(outDir, "tnt_bottom.png"),
-    paint(vanilla.faces.bottom, buildPalette(BOTTOM)).toPng()
-  );
+  fs.writeFileSync(path.join(outDir, "tnt_bottom.png"), bottomFace.toPng());
   written++;
+
+  // 起爆中エンティティの定義。テクスチャの並びが main.js と一致している
+  // 必要があるので、手書きせずここから書き出す。
+  const textures = Object.fromEntries(order.map((t) => [t, `textures/entity/tnt/${t}`]));
+  fs.writeFileSync(
+    path.join(root, "RP/entity/primed_tnt.entity.json"),
+    JSON.stringify({
+      format_version: "1.10.0",
+      "minecraft:client_entity": {
+        description: {
+          identifier: "manytnt:primed_tnt",
+          materials: { default: "entity_alphatest" },
+          textures,
+          geometry: { default: "geometry.manytnt_primed_tnt" },
+          render_controllers: ["controller.render.manytnt_primed_tnt"],
+        },
+      },
+    }, null, 2) + "\n"
+  );
+
+  fs.writeFileSync(
+    path.join(root, "RP/render_controllers/primed_tnt.render_controllers.json"),
+    JSON.stringify({
+      format_version: "1.10.0",
+      render_controllers: {
+        "controller.render.manytnt_primed_tnt": {
+          arrays: {
+            textures: { "array.skins": order.map((t) => `Texture.${t}`) },
+          },
+          geometry: "Geometry.default",
+          materials: [{ "*": "Material.default" }],
+          textures: ["array.skins[query.property('manytnt:kind')]"],
+          // 本物のTNTと同じように、導火線が燃えている間は白く明滅させる
+          overlay_color: {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+            a: "math.mod(math.floor(query.life_time * 10.0), 2.0) * 0.55",
+          },
+        },
+      },
+    }, null, 2) + "\n"
+  );
+  written += 2;
 }
 
-console.log(`✅ テクスチャ ${written} 枚を書き出した (${path.relative(root, outDir)})`);
+console.log(`✅ ${written} ファイルを書き出した (ブロック・起爆中エンティティ・その定義)`);
 console.log(`   土台: ${vanilla.dir}`);

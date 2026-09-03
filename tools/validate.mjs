@@ -96,6 +96,61 @@ for (const t of types) {
   if (!clientBlocks[`manytnt:${t}`]) fail(`RP/blocks.json に manytnt:${t} が無い`);
 }
 
+/* --- 起爆中エンティティ --- */
+{
+  const bpEntity = "BP/entities/primed_tnt.json";
+  const rpEntity = "RP/entity/primed_tnt.entity.json";
+  const rpController = "RP/render_controllers/primed_tnt.render_controllers.json";
+  const rpGeometry = "RP/models/entity/primed_tnt.geo.json";
+
+  for (const f of [bpEntity, rpEntity, rpController, rpGeometry]) {
+    if (!exists(f)) fail(`起爆中エンティティの定義が無い: ${f}`);
+  }
+
+  if (exists(bpEntity)) {
+    const bp = readJson(bpEntity);
+    const desc = bp["minecraft:entity"].description;
+    const kind = desc.properties?.["manytnt:kind"];
+    if (!kind) fail(`${bpEntity}: エンティティプロパティ manytnt:kind が無い`);
+    else {
+      if (kind.client_sync !== true) fail(`${bpEntity}: manytnt:kind に client_sync が無いと見た目に反映されない`);
+      if (!Array.isArray(kind.range) || kind.range[1] < types.length - 1) {
+        fail(`${bpEntity}: manytnt:kind の範囲が ${types.length} 種類に足りない (${JSON.stringify(kind.range)})`);
+      }
+    }
+    if (!bp["minecraft:entity"].events?.["manytnt:short_fuse"]) {
+      fail(`${bpEntity}: 連鎖用の manytnt:short_fuse イベントが無い`);
+    }
+  }
+
+  if (exists(rpController)) {
+    const skins = readJson(rpController)
+      .render_controllers["controller.render.manytnt_primed_tnt"]
+      ?.arrays?.textures?.["array.skins"];
+    if (!skins) fail(`${rpController}: array.skins が無い`);
+    else {
+      const listed = skins.map((t) => t.replace("Texture.", ""));
+      // 見た目は「TNT_TABLE の何番目か」で選ぶので、並びがずれると別のTNTの姿になる
+      if (listed.length !== types.length || listed.some((t, i) => t !== types[i])) {
+        fail(`${rpController}: 見た目の並びが main.js の TNT_TABLE と一致していない`);
+      }
+    }
+  }
+
+  if (exists(rpEntity)) {
+    const textures = readJson(rpEntity)["minecraft:client_entity"].description.textures ?? {};
+    for (const t of types) {
+      if (!textures[t]) fail(`${rpEntity}: ${t} のテクスチャ指定が無い`);
+    }
+  }
+
+  for (const t of types) {
+    if (!exists(`RP/textures/entity/tnt/${t}.png`)) {
+      fail(`起爆中エンティティのテクスチャが無い: RP/textures/entity/tnt/${t}.png`);
+    }
+  }
+}
+
 /* --- manifest --- */
 const uuids = new Set();
 for (const pack of ["BP", "RP"]) {

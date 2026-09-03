@@ -26,12 +26,37 @@ Minecraft 統合版 (Bedrock) 向けのアドオン。67種類のユニークな
 ## リポジトリの構成
 
 ```
-BP/                  ビヘイビアーパック (ブロック定義・レシピ・ドロップ表・スクリプト)
-  scripts/main.js    TNTの挙動と特殊効果の本体
-RP/                  リソースパック (テクスチャ・表示名)
-tools/               開発用のツール
-many_tnt_addon.mcaddon   BP/ と RP/ から作られる配布ファイル
+BP/                       ビヘイビアーパック
+  scripts/main.js         TNTの挙動と特殊効果の本体
+  blocks/ recipes/ ...    ブロック定義・レシピ・ドロップ表
+  entities/primed_tnt.json  起爆中(導火線が燃えている状態)のTNT
+RP/                       リソースパック
+  textures/blocks/        ブロックのテクスチャ
+  textures/entity/tnt/    起爆中のTNTのテクスチャ
+  entity/ models/ render_controllers/   起爆中のTNTの見た目の定義
+tools/                    開発用のツール
+many_tnt_addon.mcaddon    BP/ と RP/ から作られる配布ファイル
 ```
+
+### 起爆中のTNTの見た目について
+
+火を点けたあと飛んでいるTNTは、バニラの `minecraft:tnt` ではなく
+自前の `manytnt:primed_tnt` を使っている。バニラのTNTエンティティは
+見た目がエンジン側で固定されていて、どのTNTに火を点けても普通のTNTに
+見えてしまうため。
+
+バニラのTNTエンティティの中身は `minecraft:explode` / `physics` /
+`collision_box` / `pushable` という普通のコンポーネントだけなので、
+同じ構成で作れば挙動はそのままに見た目だけ差し替えられる。
+導火線4秒・重力・爆風で吹き飛ぶ・ピストンで押される、といった仕様は
+すべてバニラと同じ設定にしてあり、連鎖着火で導火線が短くなる仕様も
+バニラと同じ `component_group` をイベントで足して再現している。
+
+どのTNTの姿にするかは、エンティティプロパティ `manytnt:kind` に入れた
+「`TNT_TABLE` の何番目か」でレンダーコントローラが選ぶ。
+その一覧は `tools/generate-textures.mjs` が `main.js` の並び順から
+書き出すので、手で並べ替える必要はない（ずれていれば
+`node tools/validate.mjs` が検出する）。
 
 ## 開発
 

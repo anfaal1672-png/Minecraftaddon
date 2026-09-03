@@ -142,17 +142,31 @@ export function toHexGrid({ width, height, data }) {
 }
 
 /** 描画用のキャンバス。put(x, y, "#rrggbb") で1ピクセル置く */
-export function canvas(size = 16) {
-  const data = new Uint8Array(size * size * 4);
+export function canvas(width = 16, height = width) {
+  const data = new Uint8Array(width * height * 4);
   const put = (x, y, hex) => {
-    if (x < 0 || y < 0 || x >= size || y >= size || !hex) return;
-    const i = (y * size + x) * 4;
+    if (x < 0 || y < 0 || x >= width || y >= height || !hex) return;
+    const i = (y * width + x) * 4;
     data[i] = parseInt(hex.slice(1, 3), 16);
     data[i + 1] = parseInt(hex.slice(3, 5), 16);
     data[i + 2] = parseInt(hex.slice(5, 7), 16);
     data[i + 3] = hex.length > 7 ? parseInt(hex.slice(7, 9), 16) : 255;
   };
-  return { size, data, put, toPng: () => encodePng(size, size, data) };
+  /** 別のキャンバスの内容を (dx, dy) に貼り付ける */
+  const blit = (src, dx, dy) => {
+    for (let y = 0; y < src.height; y++) {
+      for (let x = 0; x < src.width; x++) {
+        const s = (y * src.width + x) * 4;
+        const d = ((dy + y) * width + (dx + x)) * 4;
+        if (dx + x < 0 || dy + y < 0 || dx + x >= width || dy + y >= height) continue;
+        data[d] = src.data[s];
+        data[d + 1] = src.data[s + 1];
+        data[d + 2] = src.data[s + 2];
+        data[d + 3] = src.data[s + 3];
+      }
+    }
+  };
+  return { width, height, data, put, blit, toPng: () => encodePng(width, height, data) };
 }
 
 /* ------------------------------------------------------------------ */

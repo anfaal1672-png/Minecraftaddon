@@ -13,6 +13,29 @@ function check(name, ok, detail) {
   console.log(`${ok ? "  ✅" : "  ❌"} ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
+/** 起爆中エンティティの識別子 */
+const PRIMED_TNT = "manytnt:primed_tnt";
+
+/**
+ * 導火線の模擬。
+ * 実機では BP/entities/primed_tnt.json の minecraft:explode が
+ * 4秒後 (連鎖なら 0.5〜2秒後) に爆発させ、それが
+ * world.beforeEvents.explosion として飛んでくる。ここではそれを再現する。
+ */
+function primeFuse(dimension, entity, ticks) {
+  if (entity._fuseId !== undefined) system.clearRun(entity._fuseId);
+  entity._fuseId = system.runTimeout(() => {
+    if (entity.removed) return;
+    entity.removed = true;
+    onExplosion({
+      dimension,
+      source: entity,
+      getImpactedBlocks: () => [],
+      set cancel(_) {},
+    });
+  }, ticks);
+}
+
 /* ------------------------------------------------------------------ */
 /*  疑似ディメンション                                                  */
 /* ------------------------------------------------------------------ */
@@ -50,14 +73,24 @@ function makeDimension(entities = []) {
     },
     spawnEntity(typeId, loc) {
       const tags = [];
+      const props = {};
+      const dim = this;
       const entity = {
         typeId, location: { ...loc },
         addTag: (t) => tags.push(t),
         getTags: () => tags,
+        setProperty(name, value) { props[name] = value; },
+        getProperty(name) { return props[name]; },
+        // 実機では minecraft:explode の component_group が導火線を短くする
+        triggerEvent(name) {
+          if (name === "manytnt:short_fuse") primeFuse(dim, entity, 10 + Math.floor(Math.random() * 31));
+        },
         remove() { this.removed = true; },
         applyImpulse() {}, applyKnockback() {},
       };
       spawned.push(entity);
+      // 起爆中エンティティは minecraft:explode を持つので、放っておくと自分で爆発する
+      if (typeId === PRIMED_TNT) primeFuse(dim, entity, 80);
       return entity;
     },
     getEntities: () => entities,
@@ -109,8 +142,8 @@ console.log("\n連鎖爆発でTNTが増殖しないこと");
   vanillaExplosionAt(dim, { x: 12, y: 64, z: 2 });
   system.advance(200);
 
-  const count = dim.spawned.filter((e) => e.typeId === "minecraft:tnt").length;
-  check("TNTブロック1個につきTNTエンティティ1個", count === tnts.length,
+  const count = dim.spawned.filter((e) => e.typeId === PRIMED_TNT).length;
+  check("TNTブロック1個につき起爆中エンティティ1個", count === tnts.length,
         `ブロック${tnts.length}個 → エンティティ${count}個`);
   check("着火したブロックは消費されている",
         tnts.every((t) => dim.blockAt(t) === "minecraft:air"));
@@ -123,7 +156,7 @@ console.log("\n空気になった座標から再着火しないこと");
   dim.setBlock({ x: 0, y: 64, z: 0 }, "manytnt:mega_tnt");
   for (let i = 0; i < 5; i++) vanillaExplosionAt(dim, { x: 0, y: 64, z: 2 });
   system.advance(200);
-  const count = dim.spawned.filter((e) => e.typeId === "minecraft:tnt").length;
+  const count = dim.spawned.filter((e) => e.typeId === PRIMED_TNT).length;
   check("5回巻き込んでもTNTエンティティは1個", count === 1, `${count}個`);
 }
 
@@ -328,6 +361,48 @@ console.log("\nテレポート先がブロックの中にならないこと");
   vanillaExplosionAt(dim, { x: 600, y: 64, z: 2 });
   system.advance(120);
   check("行き先を確かめずに飛ばさない", !buried);
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n起爆中のTNTが種類ごとの見た目になること");
+{
+  const fsMod = await import("node:fs");
+  const rc = JSON.parse(fsMod.readFileSync("RP/render_controllers/primed_tnt.render_controllers.json", "utf8"));
+  const skins = rc.render_controllers["controller.render.manytnt_primed_tnt"].arrays.textures["array.skins"];
+
+  // 適当に散らした数種類で、着火したエンティティの見た目が
+  // そのTNTのものになっているかを確かめる
+  const samples = ["mega_tnt", "nuke_tnt", "blackhole_tnt", "gacha_tnt"];
+  const wrong = [];
+  let sawVanilla = 0;
+  let sawPrimed = 0;
+  for (const type of samples) {
+    const dim = makeDimension();
+    dim.setBlock({ x: 700, y: 64, z: 0 }, `manytnt:${type}`);
+    vanillaExplosionAt(dim, { x: 700, y: 64, z: 2 });
+    system.advance(20);
+    sawVanilla += dim.spawned.filter((e) => e.typeId === "minecraft:tnt").length;
+    const ent = dim.spawned.find((e) => e.typeId === PRIMED_TNT);
+    if (!ent) { wrong.push(`${type}: 起爆中エンティティが湧かなかった`); continue; }
+    sawPrimed++;
+    const kind = ent.getProperty("manytnt:kind");
+    // ガチャTNTは引いた中身の見た目になるのが正しいので、種類名までは問わない
+    const shown = skins[kind]?.replace("Texture.", "");
+    if (shown === undefined) wrong.push(`${type}: kind=${kind} に対応するテクスチャが無い`);
+    else if (type !== "gacha_tnt" && shown !== type) wrong.push(`${type} なのに ${shown} の見た目になっている`);
+  }
+  check("バニラのTNTではなく専用エンティティが湧く",
+        sawPrimed === samples.length && sawVanilla === 0,
+        `専用 ${sawPrimed}/${samples.length}, バニラ ${sawVanilla}`);
+  check("着火したTNTの見た目が種類と一致する", wrong.length === 0, wrong.join(" / ") || `${samples.length}種類を確認`);
+
+  // レンダーコントローラの並びが main.js の TNT_TABLE と一致していること
+  const { tntTypesInOrder } = await import("./lib/tnt-types.mjs");
+  const order = tntTypesInOrder();
+  const listed = skins.map((t) => t.replace("Texture.", ""));
+  check("見た目の一覧が main.js の並びと一致する",
+        order.length === listed.length && order.every((t, i) => t === listed[i]),
+        `${listed.length} 件`);
 }
 
 /* ------------------------------------------------------------------ */
