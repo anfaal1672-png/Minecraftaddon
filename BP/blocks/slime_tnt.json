@@ -31,12 +31,12 @@
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 0.0
+        "seconds_to_destroy": 0
       },
       "minecraft:destructible_by_explosion": {
         "explosion_resistance": 1200
       },
-      "minecraft:map_color": "#66bb6a",
+      "minecraft:map_color": "#6bb241",
       "minecraft:loot": "loot_tables/blocks/slime_tnt.json",
       "minecraft:redstone_conductivity": {
         "redstone_conductor": true,

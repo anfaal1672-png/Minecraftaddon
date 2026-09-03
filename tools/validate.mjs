@@ -2,13 +2,18 @@
  * パックの整合性チェック。
  *   実行: node tools/validate.mjs
  *
- * main.js の TNT 一覧を正として、ブロック定義・レシピ・ドロップ表・
- * 言語ファイル・テクスチャ定義・テクスチャ実ファイルが全て揃っているか確認する。
- * TNT を追加したときの付け忘れをここで検出できる。
+ * data/tnt-defs.mjs を正として、そこから生成されるはずのもの
+ * (ブロック定義・レシピ・ドロップ表・言語ファイル・テクスチャ・
+ * 起爆中エンティティの定義・スクリプトが読む表) が
+ * すべて揃っていて、内容も食い違っていないかを確認する。
+ *
+ * 生成し忘れ (data/tnt-defs.mjs を直したのに
+ * `node tools/build-assets.mjs` を実行していない) もここで検出できる。
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TNT_DEFS, TNT_IDS } from "../data/tnt-defs.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
@@ -36,11 +41,25 @@ function walkJson(dir) {
 walkJson("BP");
 walkJson("RP");
 
-/* --- main.js の TNT 一覧 --- */
-const main = read("BP/scripts/main.js");
-const table = main.match(/const TNT_TABLE = \{([\s\S]*?)\n\};/)[1];
-const types = [...table.matchAll(/\[`\$\{NS\}:(\w+)`\]/g)].map((m) => m[1]);
-if (types.length === 0) fail("TNT_TABLE を読み取れなかった");
+/* --- TNT の一覧 (唯一の情報源) --- */
+const types = TNT_IDS;
+if (types.length === 0) fail("data/tnt-defs.mjs に TNT が1件も無い");
+
+/* --- スクリプトが読む表が、定義と一致しているか --- */
+{
+  const generated = read("BP/scripts/data/tnt-table.js");
+  const listed = [...generated.matchAll(/"id":"(\w+)"/g)].map((m) => m[1]);
+  if (listed.length !== types.length || listed.some((t, i) => t !== types[i])) {
+    fail("BP/scripts/data/tnt-table.js が data/tnt-defs.mjs と食い違っている " +
+         "(node tools/build-assets.mjs を実行し忘れていないか)");
+  }
+  const index = read("BP/scripts/effects/index.js");
+  for (const def of TNT_DEFS) {
+    if (def.effect && !index.includes(`  ${def.effect},`)) {
+      fail(`効果 ${def.effect} (${def.id}) が BP/scripts/effects/index.js に無い`);
+    }
+  }
+}
 
 /* --- 各TNTに必要なファイルが揃っているか --- */
 const has = (dir) => new Set(list(dir).map((f) => f.replace(/\.json$/, "")));

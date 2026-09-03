@@ -31,12 +31,12 @@
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 0.0
+        "seconds_to_destroy": 0
       },
       "minecraft:destructible_by_explosion": {
         "explosion_resistance": 1200
       },
-      "minecraft:map_color": "#ff1493",
+      "minecraft:map_color": "#c72c8f",
       "minecraft:loot": "loot_tables/blocks/disco_tnt.json",
       "minecraft:redstone_conductivity": {
         "redstone_conductor": true,

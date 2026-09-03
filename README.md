@@ -26,17 +26,52 @@ Minecraft 統合版 (Bedrock) 向けのアドオン。67種類のユニークな
 ## リポジトリの構成
 
 ```
+data/tnt-defs.mjs         TNTの一覧。ここが唯一の情報源
 BP/                       ビヘイビアーパック
-  scripts/main.js         TNTの挙動と特殊効果の本体
-  blocks/ recipes/ ...    ブロック定義・レシピ・ドロップ表
-  entities/primed_tnt.json  起爆中(導火線が燃えている状態)のTNT
+  scripts/
+    main.js               入口。各機能を登録するだけ
+    core/                 一覧・着火・爆発・統計・コマンド
+    effects/              種類ごとの特殊効果
+    util/                 エンティティ・ブロック・演出の小物
+    data/tnt-table.js     生成物: 実行時に読む設定表
+  blocks/ recipes/ loot_tables/ texts/   生成物
+  entities/primed_tnt.json               起爆中のTNT
 RP/                       リソースパック
-  textures/blocks/        ブロックのテクスチャ
-  textures/entity/tnt/    起爆中のTNTのテクスチャ
-  entity/ models/ render_controllers/   起爆中のTNTの見た目の定義
+  textures/blocks/        生成物: ブロックのテクスチャ
+  textures/entity/tnt/    生成物: 起爆中のTNTのテクスチャ
+  entity/ models/ render_controllers/    起爆中のTNTの見た目
 tools/                    開発用のツール
 many_tnt_addon.mcaddon    BP/ と RP/ から作られる配布ファイル
 ```
+
+### 単一の情報源
+
+TNT1種類の情報は `data/tnt-defs.mjs` の1件にまとまっている。
+名前・威力・効果・色・紋章・レシピをそこに書けば、あとは生成される。
+
+```
+data/tnt-defs.mjs
+      │
+      ├─ node tools/build-assets.mjs
+      │     BP/blocks/<id>.json           ブロック定義
+      │     BP/recipes/<id>.json          レシピ
+      │     BP/loot_tables/blocks/<id>.json ドロップ
+      │     BP/texts/*.lang, RP/texts/*.lang 表示名
+      │     RP/blocks.json                 ブロックの音
+      │     RP/textures/terrain_texture.json テクスチャの登録
+      │     BP/scripts/data/tnt-table.js   スクリプトが読む表
+      │     BP/scripts/effects/index.js    効果の名前→実体
+      │
+      └─ node tools/generate-textures.mjs
+            RP/textures/blocks/*.png       ブロックのテクスチャ
+            RP/textures/entity/tnt/*.png   起爆中のテクスチャ
+            RP/entity/primed_tnt.entity.json
+            RP/render_controllers/primed_tnt.render_controllers.json
+```
+
+手で書くのは `data/tnt-defs.mjs` と、効果の中身 (`BP/scripts/effects/`)、
+紋章の絵柄 (`tools/lib/emblems.mjs`) だけ。生成し忘れは
+`node tools/validate.mjs` が検出する。
 
 ### 起爆中のTNTの見た目について
 
@@ -80,18 +115,13 @@ node tools/generate-textures.mjs
 Node.js 22 以降が必要です。テストは `tools/mock-minecraft-server.mjs` で `@minecraft/server` を
 差し替えることで、Minecraft を起動せずに爆発イベントを流し込んで挙動を確認します。
 
-### TNTを追加するときに必要なファイル
+### TNTを追加するには
 
-`node tools/validate.mjs` が付け忘れを検出してくれます。
-
-1. `BP/scripts/main.js` の `TNT_TABLE` に設定を追加 (必要なら効果関数も)
-2. `BP/blocks/<名前>.json` — ブロック定義
-3. `BP/recipes/<名前>.json` — クラフトレシピ
-4. `BP/loot_tables/blocks/<名前>.json` — 破壊時のドロップ
-5. `tools/lib/palettes.mjs` に色と紋章を1行追加し、`node tools/generate-textures.mjs` を実行
-   （テクスチャPNGは手描きせず、ここから生成する。紋章の絵柄は `tools/lib/emblems.mjs`）
-6. `RP/textures/terrain_texture.json` と `RP/blocks.json` — テクスチャの登録
-7. `BP/texts/*.lang` と `RP/texts/*.lang` — 表示名 (BPとRPで同じ内容にする)
+1. `data/tnt-defs.mjs` に1件足す（名前・威力・効果名・色・紋章・レシピ）
+2. 効果が新しいなら `BP/scripts/effects/` のどれかに `～Effect` 関数を書く
+3. 紋章が新しいなら `tools/lib/emblems.mjs` に 10行×14列で描く
+4. `node tools/build-assets.mjs && node tools/generate-textures.mjs`
+5. `./tools/build.sh`
 
 ### テクスチャの作り
 

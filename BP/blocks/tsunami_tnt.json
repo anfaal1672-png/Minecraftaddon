@@ -31,12 +31,12 @@
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 0.0
+        "seconds_to_destroy": 0
       },
       "minecraft:destructible_by_explosion": {
         "explosion_resistance": 1200
       },
-      "minecraft:map_color": "#0288d1",
+      "minecraft:map_color": "#174f8f",
       "minecraft:loot": "loot_tables/blocks/tsunami_tnt.json",
       "minecraft:redstone_conductivity": {
         "redstone_conductor": true,

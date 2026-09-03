@@ -18,9 +18,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { canvas, shade, mix, isLight } from "./lib/png.mjs";
 import { EMBLEMS, assertEmblems } from "./lib/emblems.mjs";
-import { PALETTES, RAINBOW_ROWS, BOTTOM } from "./lib/palettes.mjs";
+import { RAINBOW_ROWS, BOTTOM } from "./lib/palettes.mjs";
+import { TNT_IDS, TNT_BY_ID } from "../data/tnt-defs.mjs";
 import { loadVanillaTnt, GLYPH_ROLES, NOT_FOUND_MESSAGE } from "./lib/vanilla.mjs";
-import { tntTypesInOrder } from "./lib/tnt-types.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "RP/textures/blocks");
@@ -42,7 +42,7 @@ const BODY_STEPS = { bright: 0.1, body: 0, crimson: -0.24, dark: -0.35 };
 
 /** 地の色ひとつから、バニラの13色それぞれに対応する色を作る */
 function buildPalette(spec) {
-  const body = spec.crate;
+  const body = spec.color;
   const band = spec.band ?? mix("#dedbd9", body, 0.05);
   // バニラのTNTの文字は黒ではなく濃紺。種類ごとの色味は残しつつ、その紺に寄せる
   const ink = spec.ink ?? (isLight(band)
@@ -180,24 +180,14 @@ fs.mkdirSync(entityTexDir, { recursive: true });
 
 // 起爆中エンティティのテクスチャ選択は main.js の TNT_TABLE の並び順で行うので、
 // 一覧もその順で作る
-const order = tntTypesInOrder();
-const missing = order.filter((t) => !PALETTES[t]);
-if (missing.length) {
-  console.error(`  ❌ main.js にあるのに palettes.mjs に無い: ${missing.join(", ")}`);
-  process.exit(1);
-}
-const extra = Object.keys(PALETTES).filter((t) => !order.includes(t));
-if (extra.length) {
-  console.error(`  ❌ palettes.mjs にあるのに main.js に無い: ${extra.join(", ")}`);
-  process.exit(1);
-}
+const order = TNT_IDS;
 
 let written = 0;
 const bottomFace = paint(vanilla.faces.bottom, buildPalette(BOTTOM));
 
 for (const type of order) {
   if (only && type !== only) continue;
-  const spec = PALETTES[type];
+  const spec = TNT_BY_ID.get(type);
   if (!EMBLEMS[spec.emblem]) {
     console.error(`  ❌ ${type}: 紋章 "${spec.emblem}" が見つからない`);
     process.exit(1);

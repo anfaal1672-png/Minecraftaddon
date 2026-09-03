@@ -31,12 +31,12 @@
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 0.0
+        "seconds_to_destroy": 0
       },
       "minecraft:destructible_by_explosion": {
         "explosion_resistance": 1200
       },
-      "minecraft:map_color": "#311b92",
+      "minecraft:map_color": "#211933",
       "minecraft:loot": "loot_tables/blocks/obsidian_tnt.json",
       "minecraft:redstone_conductivity": {
         "redstone_conductor": true,

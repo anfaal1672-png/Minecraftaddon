@@ -6,6 +6,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT="many_tnt_addon.mcaddon"
 
+echo "▶ 生成物の作り直し (テクスチャ以外)"
+node tools/build-assets.mjs
+
 echo "▶ パックの整合性チェック"
 node tools/validate.mjs
 
