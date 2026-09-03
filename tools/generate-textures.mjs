@@ -26,9 +26,16 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "RP/textures/blocks");
 const entityTexDir = path.join(root, "RP/textures/entity/tnt");
 
-/* 帯に文字が乗る範囲。バニラの "TNT" が置かれているのと同じ位置 */
-const GLYPH_TOP = 6;
-const GLYPH_LEFT = 2;
+/*
+ * 紋章を描く範囲 (10行×14列)。バニラの "TNT" は帯の内側 4行に収まっているが、
+ * 67種類を見分けるにはそれでは小さすぎるので、帯 (5〜10行) を越えて
+ * 本体の上まで使う。はみ出した部分は縞の上に乗って読みにくくなるため、
+ * そこだけ 1ドットの縁取りを付ける。
+ */
+const GLYPH_TOP = 3;
+const GLYPH_LEFT = 1;
+const BAND_TOP = 5;
+const BAND_BOTTOM = 10;
 
 /* 本体の赤4段階にあたる役割と、地の色からの明暗の差 */
 const BODY_STEPS = { bright: 0.1, body: 0, crimson: -0.24, dark: -0.35 };
@@ -58,6 +65,9 @@ function buildPalette(spec) {
     ink,
     inkLight: shade(ink, 0.45),
     inkDark: shade(ink, -0.4),
+    // 帯の外に出た紋章を縞から浮き立たせるための縁取り。
+    // 明るい帯なら白寄り、暗い帯なら黒寄りにして、どちらでも輪郭が出るようにする
+    glyphOutline: isLight(band) ? shade(band, 0.3) : shade(band, -0.5),
     style: spec.style,
   };
 }
@@ -88,10 +98,33 @@ function paint(roleGrid, pal, { blankGlyph = false } = {}) {
   return c;
 }
 
-/** 帯の上に紋章を描く */
+/** 紋章を描く。帯からはみ出した部分には縁取りを付ける */
 function drawGlyph(c, pal, emblem) {
+  const rows = EMBLEMS[emblem];
   const inkOf = { X: pal.ink, o: pal.inkLight, "#": pal.inkDark };
-  EMBLEMS[emblem].forEach((row, ry) => {
+
+  const filled = new Set();
+  rows.forEach((row, ry) => {
+    [...row].forEach((ch, rx) => {
+      if (inkOf[ch]) filled.add(`${GLYPH_LEFT + rx},${GLYPH_TOP + ry}`);
+    });
+  });
+
+  // 縁取り。帯の中は元々明暗の差があるので付けず、外に出た部分だけに付ける。
+  // 斜めまで囲うと塊に見えてしまうので、上下左右の4方向だけにする
+  const NEIGHBORS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (const key of filled) {
+    const [x, y] = key.split(",").map(Number);
+    for (const [dx, dy] of NEIGHBORS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (ny >= BAND_TOP && ny <= BAND_BOTTOM) continue;
+      if (filled.has(`${nx},${ny}`)) continue;
+      c.put(nx, ny, pal.glyphOutline);
+    }
+  }
+
+  rows.forEach((row, ry) => {
     [...row].forEach((ch, rx) => {
       const color = inkOf[ch];
       if (!color) return;
