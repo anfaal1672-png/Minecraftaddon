@@ -624,6 +624,52 @@ export const TNT_DEFS = [
     color: "#f24aa2", emblem: "star",
     recipe: { ingredients: ["minecraft:tnt", "minecraft:emerald", "minecraft:rabbit_foot"], count: 3 },
   },
+  /* ── ここから先は仕組みからして常軌を逸したTNT ── */
+  {
+    id: "singularity_tnt",
+    name: { ja: "特異点TNT", en: "Singularity TNT" },
+    power: 0, breaks: false, fire: false, underwater: true,
+    effect: "singularityEffect",
+    trail: "minecraft:basic_smoke_particle",
+    color: "#0e0e18", band: "#131320", emblem: "singularity",
+    recipe: { ingredients: ["manytnt:antimatter_tnt", "manytnt:blackhole_tnt", "minecraft:nether_star"] },
+  },
+  {
+    id: "timestop_tnt",
+    name: { ja: "時間停止TNT", en: "Time Stop TNT" },
+    power: 0, breaks: false, fire: false,
+    effect: "timestopEffect",
+    trail: "minecraft:endrod",
+    color: "#3fb2c6", emblem: "hourglass",
+    recipe: { ingredients: ["manytnt:armageddon_tnt", "minecraft:clock", "minecraft:ender_eye"] },
+  },
+  {
+    id: "drill_tnt",
+    name: { ja: "地殻貫通TNT", en: "Earthborer TNT" },
+    power: 6, breaks: true, fire: false, underwater: true,
+    effect: "drillEffect",
+    trail: "minecraft:crit_particle",
+    color: "#6b7079", emblem: "drill",
+    recipe: { ingredients: ["manytnt:ultra_nuke_tnt", "manytnt:shaft_tnt", "minecraft:netherite_ingot"] },
+  },
+  {
+    id: "collapse_tnt",
+    name: { ja: "崩落TNT", en: "Collapse TNT" },
+    power: 0, breaks: false, fire: false,
+    effect: "collapseEffect",
+    trail: "minecraft:basic_smoke_particle",
+    color: "#c8a75e", emblem: "collapse",
+    recipe: { ingredients: ["manytnt:earthquake_tnt", "manytnt:tsar_bomba_tnt", "minecraft:sand", "minecraft:gravel"] },
+  },
+  {
+    id: "replicator_tnt",
+    name: { ja: "増殖TNT", en: "Replicator TNT" },
+    power: 6, breaks: true, fire: false,
+    effect: "replicatorEffect",
+    trail: "minecraft:villager_happy",
+    color: "#5fc95f", emblem: "replicate",
+    recipe: { ingredients: ["manytnt:mega_tnt", "manytnt:gacha_tnt", "minecraft:nether_star"] },
+  },
 ];
 
 /** 種類の並び順 (起爆中エンティティの見た目の番号はこの順) */

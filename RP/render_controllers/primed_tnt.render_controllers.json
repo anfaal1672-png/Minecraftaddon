@@ -71,7 +71,12 @@
             "Texture.vacuum_tnt",
             "Texture.chorus_tnt",
             "Texture.armageddon_tnt",
-            "Texture.gacha_tnt"
+            "Texture.gacha_tnt",
+            "Texture.singularity_tnt",
+            "Texture.timestop_tnt",
+            "Texture.drill_tnt",
+            "Texture.collapse_tnt",
+            "Texture.replicator_tnt"
           ]
         }
       },

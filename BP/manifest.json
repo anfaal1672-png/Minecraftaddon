@@ -2,23 +2,39 @@
   "format_version": 2,
   "header": {
     "name": "いろんなTNT追加アドオン",
-    "description": "67種類のユニークなTNTを追加します (BP)",
+    "description": "72種類のユニークなTNTを追加します (BP)",
     "uuid": "5b0948bc-bb22-479e-a059-8ac3194998eb",
-    "version": [31, 0, 0],
-    "min_engine_version": [1, 21, 90]
+    "version": [
+      32,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
   },
   "modules": [
     {
       "type": "data",
       "uuid": "ea3363ba-dc1f-430d-a8c9-9c97f04462f7",
-      "version": [31, 0, 0]
+      "version": [
+        32,
+        0,
+        0
+      ]
     },
     {
       "type": "script",
       "language": "javascript",
       "uuid": "d1a2103c-406d-4b11-95ed-2bfa37c55d72",
       "entry": "scripts/main.js",
-      "version": [31, 0, 0]
+      "version": [
+        32,
+        0,
+        0
+      ]
     }
   ],
   "dependencies": [

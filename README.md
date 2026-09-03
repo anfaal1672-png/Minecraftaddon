@@ -1,6 +1,6 @@
 # いろんなTNT追加アドオン (many_tnt_addon)
 
-Minecraft 統合版 (Bedrock) 向けのアドオン。67種類のユニークなTNTと、遠隔で着火できるリモート起爆装置を追加します。
+Minecraft 統合版 (Bedrock) 向けのアドオン。72種類のユニークなTNTと、遠隔で着火できるリモート起爆装置を追加します。
 
 対応バージョン: Minecraft 1.21.90 以降 (`@minecraft/server` 2.7.0)
 
@@ -128,7 +128,7 @@ Node.js 22 以降が必要です。テストは `tools/mock-minecraft-server.mjs
 **バニラのTNTのテクスチャそのものを土台にしている。**
 `tools/generate-textures.mjs` がバニラの `tnt_side.png` / `tnt_top.png` /
 `tnt_bottom.png` を読み込み、使われている13色を「役割」に分けて、
-そのTNTの色に差し替える。側面の "TNT" の文字を紋章に置き換える。紋章は67種類を見分けられるよう
+そのTNTの色に差し替える。側面の "TNT" の文字を紋章に置き換える。紋章は72種類を見分けられるよう
 帯（5〜10行）を越えて本体の上まで使い、はみ出した部分には自動で
 1ドットの縁取りが付く。
 

@@ -406,6 +406,121 @@ console.log("\n起爆中のTNTが種類ごとの見た目になること");
 }
 
 /* ------------------------------------------------------------------ */
+console.log("\n特異点TNT: 球状に空間を消し、暴走しないこと");
+{
+  const dim = makeDimension();
+  for (let dx = -30; dx <= 30; dx++)
+    for (let dz = -30; dz <= 30; dz++)
+      for (let dy = -20; dy <= 20; dy++)
+        dim.setBlock({ x: 900 + dx, y: 64 + dy, z: dz }, "minecraft:stone");
+  dim.setBlock({ x: 900, y: 64, z: 0 }, "manytnt:singularity_tnt");
+  vanillaExplosionAt(dim, { x: 900, y: 64, z: 2 });
+
+  let peak = 0;
+  let last = 0;
+  let seen = 0;
+  for (let t = 1; t <= 400; t++) {
+    const before = [...dim.writes.values()].reduce((a, b) => a + b, 0);
+    system.advance(1);
+    const now = [...dim.writes.values()].reduce((a, b) => a + b, 0);
+    peak = Math.max(peak, now - before);
+    if (now > seen) { seen = now; last = t; }
+  }
+  check("半径いっぱいまで消える", seen > 40000, `${seen} ブロック`);
+  check("1tickあたりの負荷に上限がかかっている", peak <= 2400, `最大 ${peak} ブロック/tick`);
+  check("数秒で終わる", last < 260, `${last} tick (${(last / 20).toFixed(1)}秒)`);
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n地殻貫通TNT: 岩盤付近まで掘り抜くこと");
+{
+  const dim = makeDimension();
+  for (let dx = -12; dx <= 12; dx++)
+    for (let dz = -12; dz <= 12; dz++)
+      for (let y = -64; y <= 90; y++)
+        dim.setBlock({ x: 1000 + dx, y, z: dz }, y === -64 ? "minecraft:bedrock" : "minecraft:stone");
+  dim.setBlock({ x: 1000, y: 64, z: 0 }, "manytnt:drill_tnt");
+  vanillaExplosionAt(dim, { x: 1000, y: 64, z: 2 });
+  system.advance(400);
+
+  check("真下が深くまで貫通している",
+        dim.blockAt({ x: 1000, y: -40, z: 0 }) === "minecraft:air",
+        dim.blockAt({ x: 1000, y: -40, z: 0 }));
+  check("岩盤は残る", dim.blockAt({ x: 1000, y: -64, z: 0 }) === "minecraft:bedrock");
+  check("穴に太さがある", dim.blockAt({ x: 1007, y: 40, z: 0 }) === "minecraft:air",
+        `中心から7ブロック横: ${dim.blockAt({ x: 1007, y: 40, z: 0 })}`);
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n崩落TNT: 地形を砂に変えて崩すこと");
+{
+  const dim = makeDimension();
+  for (let dx = -20; dx <= 20; dx++)
+    for (let dz = -20; dz <= 20; dz++)
+      for (let dy = -12; dy <= 18; dy++)
+        dim.setBlock({ x: 1100 + dx, y: 64 + dy, z: dz }, "minecraft:stone");
+  dim.setBlock({ x: 1100, y: 64, z: 0 }, "manytnt:collapse_tnt");
+  vanillaExplosionAt(dim, { x: 1100, y: 64, z: 2 });
+  system.advance(400);
+
+  let sand = 0;
+  let hollow = 0;
+  for (let dx = -18; dx <= 18; dx += 2) {
+    for (let dz = -18; dz <= 18; dz += 2) {
+      if (dim.blockAt({ x: 1100 + dx, y: 70, z: dz }) === "minecraft:sand") sand++;
+      if (dim.blockAt({ x: 1100 + dx, y: 57, z: dz }) === "minecraft:air") hollow++;
+    }
+  }
+  check("上の地形が砂に変わる", sand > 100, `${sand} 箇所`);
+  check("足元がくり抜かれて落ちる先ができる", hollow > 20, `${hollow} 箇所`);
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n増殖TNT: 増えるが暴走しないこと");
+{
+  const dim = makeDimension();
+  dim.setBlock({ x: 1200, y: 64, z: 0 }, "manytnt:replicator_tnt");
+  vanillaExplosionAt(dim, { x: 1200, y: 64, z: 2 });
+  system.advance(1200);
+
+  const total = dim.spawned.filter((e) => e.typeId === PRIMED_TNT).length;
+  check("実際に増える", total > 5, `${total} 回爆発した`);
+  // 上限は 1 (最初) + REPLICATION_LIMIT。連鎖上限にも守られている
+  check("際限なく増え続けない", total <= 60, `${total} 回で止まった`);
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n時間停止TNT: 止めてから一斉に解放すること");
+{
+  const held = { x: 1305, y: 64, z: 0 };
+  let damage = 0;
+  const victim = {
+    typeId: "minecraft:zombie",
+    location: { ...held },
+    teleport(loc) { this.location = { ...loc }; },
+    tryTeleport(loc) { this.location = { ...loc }; return true; },
+    addEffect() {}, applyImpulse() {}, applyKnockback() {},
+    applyDamage(n) { damage += n; },
+    getTags: () => [],
+  };
+  const dim = makeDimension([victim]);
+  dim.setBlock({ x: 1300, y: 64, z: 0 }, "manytnt:timestop_tnt");
+  vanillaExplosionAt(dim, { x: 1300, y: 64, z: 2 });
+
+  system.advance(60);
+  // 止まっている間に動かそうとしても、元の位置に戻される
+  victim.location = { x: 1350, y: 90, z: 40 };
+  system.advance(20);
+  const heldStill = Math.abs(victim.location.x - held.x) < 0.001;
+  const duringDamage = damage;
+  check("止まっている間は動けない", heldStill, `x=${victim.location.x}`);
+  check("止まっている間はダメージが来ない", duringDamage === 0, `${duringDamage}`);
+
+  system.advance(200);
+  check("時が動き出すとまとめてダメージが入る", damage > 0, `${damage}`);
+}
+
+/* ------------------------------------------------------------------ */
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length} / ${results.length} 件成功`);
 if (failed.length) {

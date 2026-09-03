@@ -408,6 +408,36 @@
     },
     "manytnt:gacha_tnt_side": {
       "textures": "textures/blocks/gacha_tnt_side"
+    },
+    "manytnt:singularity_tnt_top": {
+      "textures": "textures/blocks/singularity_tnt_top"
+    },
+    "manytnt:singularity_tnt_side": {
+      "textures": "textures/blocks/singularity_tnt_side"
+    },
+    "manytnt:timestop_tnt_top": {
+      "textures": "textures/blocks/timestop_tnt_top"
+    },
+    "manytnt:timestop_tnt_side": {
+      "textures": "textures/blocks/timestop_tnt_side"
+    },
+    "manytnt:drill_tnt_top": {
+      "textures": "textures/blocks/drill_tnt_top"
+    },
+    "manytnt:drill_tnt_side": {
+      "textures": "textures/blocks/drill_tnt_side"
+    },
+    "manytnt:collapse_tnt_top": {
+      "textures": "textures/blocks/collapse_tnt_top"
+    },
+    "manytnt:collapse_tnt_side": {
+      "textures": "textures/blocks/collapse_tnt_side"
+    },
+    "manytnt:replicator_tnt_top": {
+      "textures": "textures/blocks/replicator_tnt_top"
+    },
+    "manytnt:replicator_tnt_side": {
+      "textures": "textures/blocks/replicator_tnt_side"
     }
   }
 }

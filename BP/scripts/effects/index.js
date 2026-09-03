@@ -9,6 +9,7 @@ import { antiGravityEffect, beamEffect, blackholeEffect, bouncyEffect, chorusEff
 import { antimatterEffect, armageddonEffect, hydrogenBombEffect, nukeEffect, tsarBombaEffect, ultraNukeEffect } from "./nuclear.js";
 import { arrowEffect, confettiEffect, discoEffect, fireworksEffect, fortuneEffect, musicEffect, rainbowEffect, treasureEffect, xpEffect } from "./spectacle.js";
 import { builderEffect, cactusEffect, desertEffect, earthquakeEffect, grassEffect, harvestEffect, honeyEffect, meteorEffect, shaftEffect } from "./terrain.js";
+import { collapseEffect, drillEffect, replicatorEffect, singularityEffect, timestopEffect } from "./cataclysm.js";
 import { darknessEffect, daynightEffect, fireEffect, glowEffect, iceEffect, iceageEffect, lavaEffect, obsidianEffect, poisonEffect, scorchedEffect, smelterEffect, stormEffect, thunderEffect, tsunamiEffect, vacuumEffect, waterEffect } from "./elemental.js";
 
 export const EFFECTS = {
@@ -24,6 +25,7 @@ export const EFFECTS = {
   builderEffect,
   cactusEffect,
   chorusEffect,
+  collapseEffect,
   confettiEffect,
   confusionEffect,
   curseEffect,
@@ -31,6 +33,7 @@ export const EFFECTS = {
   daynightEffect,
   desertEffect,
   discoEffect,
+  drillEffect,
   earthquakeEffect,
   endermanEffect,
   feastEffect,
@@ -55,8 +58,10 @@ export const EFFECTS = {
   obsidianEffect,
   poisonEffect,
   rainbowEffect,
+  replicatorEffect,
   scorchedEffect,
   shaftEffect,
+  singularityEffect,
   slimeEffect,
   smelterEffect,
   snowgolemEffect,
@@ -66,6 +71,7 @@ export const EFFECTS = {
   swapEffect,
   teleportEffect,
   thunderEffect,
+  timestopEffect,
   treasureEffect,
   tsarBombaEffect,
   tsunamiEffect,

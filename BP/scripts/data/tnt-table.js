@@ -72,4 +72,9 @@ export const TNT_TABLE = [
   {"id":"chorus_tnt","power":2,"breaks":false,"fire":false,"trail":"minecraft:endrod","effect":"chorusEffect"},
   {"id":"armageddon_tnt","power":40,"breaks":true,"fire":true,"underwater":true,"trail":"minecraft:huge_explosion_emitter","effect":"armageddonEffect"},
   {"id":"gacha_tnt","power":2,"breaks":true,"fire":false,"trail":"minecraft:totem_particle","gacha":true},
+  {"id":"singularity_tnt","power":0,"breaks":false,"fire":false,"underwater":true,"trail":"minecraft:basic_smoke_particle","effect":"singularityEffect"},
+  {"id":"timestop_tnt","power":0,"breaks":false,"fire":false,"trail":"minecraft:endrod","effect":"timestopEffect"},
+  {"id":"drill_tnt","power":6,"breaks":true,"fire":false,"underwater":true,"trail":"minecraft:crit_particle","effect":"drillEffect"},
+  {"id":"collapse_tnt","power":0,"breaks":false,"fire":false,"trail":"minecraft:basic_smoke_particle","effect":"collapseEffect"},
+  {"id":"replicator_tnt","power":6,"breaks":true,"fire":false,"trail":"minecraft:villager_happy","effect":"replicatorEffect"},
 ];

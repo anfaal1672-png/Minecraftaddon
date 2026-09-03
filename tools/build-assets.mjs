@@ -148,6 +148,15 @@ for (const pack of ["BP", "RP"]) {
   count++;
 }
 
+// manifest の説明にある種類数も、手で直し忘れないようここから書き換える
+for (const pack of ["BP", "RP"]) {
+  const rel = `${pack}/manifest.json`;
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, rel), "utf8"));
+  manifest.header.description = `${TNT_DEFS.length}種類のユニークなTNTを追加します (${pack})`;
+  writeJson(rel, manifest);
+  count++;
+}
+
 writeJson("RP/blocks.json", {
   format_version: "1.21.40",
   ...Object.fromEntries(TNT_DEFS.map((d) => [`${NS}:${d.id}`, { sound: "grass" }])),

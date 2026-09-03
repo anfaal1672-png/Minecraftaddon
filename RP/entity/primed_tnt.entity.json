@@ -73,7 +73,12 @@
         "vacuum_tnt": "textures/entity/tnt/vacuum_tnt",
         "chorus_tnt": "textures/entity/tnt/chorus_tnt",
         "armageddon_tnt": "textures/entity/tnt/armageddon_tnt",
-        "gacha_tnt": "textures/entity/tnt/gacha_tnt"
+        "gacha_tnt": "textures/entity/tnt/gacha_tnt",
+        "singularity_tnt": "textures/entity/tnt/singularity_tnt",
+        "timestop_tnt": "textures/entity/tnt/timestop_tnt",
+        "drill_tnt": "textures/entity/tnt/drill_tnt",
+        "collapse_tnt": "textures/entity/tnt/collapse_tnt",
+        "replicator_tnt": "textures/entity/tnt/replicator_tnt"
       },
       "geometry": {
         "default": "geometry.manytnt_primed_tnt"

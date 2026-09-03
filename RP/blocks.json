@@ -200,5 +200,20 @@
   },
   "manytnt:gacha_tnt": {
     "sound": "grass"
+  },
+  "manytnt:singularity_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:timestop_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:drill_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:collapse_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:replicator_tnt": {
+    "sound": "grass"
   }
 }
