@@ -219,21 +219,19 @@ console.log("\n爆発の威力が安全上限内に収まること");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n核TNT: 隙間のないすり鉢状クレーターを短時間で掘ること");
+console.log("\n核TNT: 爆心地を中心とした球が消し飛ぶこと");
 {
   const dim = makeDimension();
-  const R = 24;
-  // 爆心地の周りを石で埋めておく
+  const R = 30;
+  // 爆心地をぐるりと石で囲む (上下ともに)
   for (let dx = -R; dx <= R; dx++)
     for (let dz = -R; dz <= R; dz++)
-      for (let dy = -12; dy <= 2; dy++)
-        dim.setBlock({ x: 100 + dx, y: 64 + dy, z: dx * 0 + dz }, "minecraft:stone");
+      for (let dy = -R; dy <= R; dy++)
+        dim.setBlock({ x: 100 + dx, y: 64 + dy, z: dz }, "minecraft:stone");
 
   dim.setBlock({ x: 100, y: 64, z: 0 }, "manytnt:nuke_tnt");
   vanillaExplosionAt(dim, { x: 100, y: 64, z: 2 });
 
-  // 放射能ゾーンやきのこ雲は数百tick残り続けるので、
-  // 「掘削が終わった時刻」はブロック書き込みが止まった時点で測る
   let lastDigTick = 0;
   let seen = 0;
   for (let t = 1; t <= 600; t++) {
@@ -242,46 +240,29 @@ console.log("\n核TNT: 隙間のないすり鉢状クレーターを短時間で
     if (total > seen) { seen = total; lastDigTick = t; }
   }
 
-  // 中心付近の柱がきちんと掘れているか (半径の6割まではまず穴が空いているはず)
-  let dug = 0, checked = 0;
-  for (let dx = -9; dx <= 9; dx++) {
-    for (let dz = -9; dz <= 9; dz++) {
-      if (dx * dx + dz * dz > 81) continue;
-      checked++;
-      if (dim.blockAt({ x: 100 + dx, y: 63, z: dz }) === "minecraft:air") dug++;
-    }
-  }
-  const ratio = dug / checked;
-  check("クレーターの内側に隙間がない", ratio > 0.95, `${(ratio * 100).toFixed(0)}% が掘れている`);
+  // これまでは爆心地より上がほとんど残っていた。そこを重点的に確かめる
+  const above = [4, 8, 12, 16].filter((dy) => dim.blockAt({ x: 100, y: 64 + dy, z: 0 }) === "minecraft:air");
+  check("爆心地より上も壊れる", above.length === 4,
+        `上方向 4/8/12/16 ブロックのうち ${above.length} 箇所が消えた`);
 
-  // すり鉢状か: 中心ほど深く、外へ行くほど浅くなっているはず。
-  // 柱ごとの深さには意図的なばらつきを入れてあるので、
-  // 1本だけ見ると前後する。同じ半径の柱をまとめて平均で比べる。
-  const avgDepth = (rMin, rMax) => {
-    let sum = 0;
+  const below = [4, 8, 12, 16].filter((dy) => dim.blockAt({ x: 100, y: 64 - dy, z: 0 }) === "minecraft:air");
+  check("上下どちらにも同じだけ広がる", below.length === above.length,
+        `上 ${above.length} / 下 ${below.length}`);
+
+  // 球なら、中心の柱がいちばん高く、外へ行くほど低くなる
+  const heightAt = (dx) => {
     let n = 0;
-    for (let dx = -16; dx <= 16; dx++) {
-      for (let dz = -16; dz <= 16; dz++) {
-        const r = Math.sqrt(dx * dx + dz * dz);
-        if (r < rMin || r > rMax) continue;
-        let d = 0;
-        for (let y = 64; y >= 36; y--) {
-          if (dim.blockAt({ x: 100 + dx, y, z: dz }) !== "minecraft:air") break;
-          d++;
-        }
-        sum += d;
-        n++;
-      }
+    for (let dy = -R; dy <= R; dy++) {
+      if (dim.blockAt({ x: 100 + dx, y: 64 + dy, z: 0 }) === "minecraft:air") n++;
     }
-    return n ? sum / n : 0;
+    return n;
   };
-  const inner = avgDepth(0, 3);
-  const mid = avgDepth(7, 9);
-  const outer = avgDepth(13, 15);
-  check("中心ほど深いすり鉢状になっている", inner > mid && mid > outer,
-        `中心${inner.toFixed(1)} > 中間${mid.toFixed(1)} > 外周${outer.toFixed(1)} ブロック`);
-  check("掘り終わるまでが十分速い", lastDigTick < 160,
-        `${lastDigTick} tick (${(lastDigTick / 20).toFixed(1)}秒) で掘削完了`);
+  const [hCenter, hMid, hEdge] = [heightAt(0), heightAt(12), heightAt(21)];
+  check("球状になっている (中心が高く外ほど低い)", hCenter > hMid && hMid > hEdge && hEdge > 0,
+        `中心${hCenter} > 中間${hMid} > 外周${hEdge} ブロック`);
+
+  check("掘り終わるまでが十分速い", lastDigTick < 200,
+        `${lastDigTick} tick (${(lastDigTick / 20).toFixed(1)}秒) / ${seen} ブロック`);
 }
 
 /* ------------------------------------------------------------------ */

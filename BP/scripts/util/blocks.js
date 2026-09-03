@@ -41,126 +41,92 @@ export function trySetBlock(dimension, loc, candidates) {
   return false;
 }
 
-/**
- * クレーターを掘るときに 1tick で触るブロック数の上限。
- * 規模がどれだけ大きくなっても1tickあたりの負荷を一定に保つための予算。
- */
-export const CRATER_BUDGET_PER_TICK = 2200;
+/** 縦穴掘りや砂化など、単純な置き換えの 1tick あたりの上限 */
+const BLOCK_BUDGET_PER_TICK = 2200;
 
 /**
- * 爆心地に、すり鉢状のクレーターを掘る。
+ * 掘削の 1tick あたりの上限。
  *
- * 以前は半径方向にリング状の爆発点を並べ、点ごとに小さな球を消していた。
- * この方式には2つの問題があった:
- *  ・点の数が半径に関係なく固定だったため、半径を大きくすると外側のリングでは
- *    点の間隔が球の直径より広がってしまい、「点々と穴が空いただけ」の見た目に
- *    なっていた (反物質爆弾では最外周の点は26ブロックも離れていた)
- *  ・点1つにつき1tickずつ進めていたので、反物質爆弾では爆発が26秒も続き、
- *    しかも重なった部分の同じブロックを何度も消し直すので、その間ずっと重かった
- *
- * 今の方式は、クレーターの形を「柱(x,z)ごとに掘る深さ」として先に確定させ、
- * 1tickあたりのブロック操作数に予算を設けて中心から外へ順に掘っていく。
- * 同じブロックには二度触らないので無駄がなく、隙間のない本物のクレーターになる。
- * 掘り終わるまでの時間は規模によらず数秒に収まる。
+ * 「触ったマスの数」と「実際に置き換えたブロックの数」を別々に数える。
+ * 空中は getBlock だけで済んで安いのに対し、setType は高くつくため、
+ * 空が多い上半分は速く進み、地面の中では負荷が一定に保たれる。
+ * どちらも規模に応じて少しだけ緩めるが、上限は必ず掛かる。
  */
-export function carveCrater(dimension, center, opts) {
-  const radius = Math.max(1, Math.round(opts.radius));
-  const depth = Math.max(2, Math.round(opts.depth ?? radius * 0.35));
-  // 中心付近は地表より上も抉れて、器のような断面になる
-  const lip = opts.lip ?? Math.max(1, Math.round(radius * 0.08));
-  const scorch = opts.scorch ?? false;
+function blastBudget(radius) {
+  return {
+    writes: Math.max(2200, Math.min(4000, Math.round(radius * 60))),
+    cells: Math.max(8000, Math.min(22000, Math.round(radius * 240))),
+  };
+}
+
+/**
+ * 爆心地を中心に、球状にブロックを消す。
+ *
+ * 以前はすり鉢状に掘っていたが、それだと爆心地より上がほとんど残ってしまい、
+ * 山の中や建物の中で使っても上半分が無傷で立っていた。
+ * 本物の爆発と同じく上下どちらにも均等に広がる球にしてある。
+ *
+ * 柱 (x,z) ごとに「上下どこまで消すか」を先に決めるので、半径が大きくても
+ * 覚えておくデータは水平の面積ぶんで済み、同じブロックを二度触ることもない。
+ *
+ * @param scorch 底に焼け焦げた地面を残すか
+ * @param onDone すべて消し終わったときに呼ばれる
+ */
+export function carveBlastSphere(dimension, center, { radius, scorch = false, onDone } = {}) {
+  const R = Math.max(1, Math.round(radius));
   const cx = Math.round(center.x);
   const cy = Math.round(center.y);
   const cz = Math.round(center.z);
 
   const columns = [];
-  for (let dx = -radius; dx <= radius; dx++) {
-    for (let dz = -radius; dz <= radius; dz++) {
-      const r2 = dx * dx + dz * dz;
-      if (r2 > radius * radius) continue;
-      const frac = Math.sqrt(r2) / radius;
-      // 外周は確率的に間引いて、輪郭が完全な円にならないようにする
-      if (frac > 0.82 && Math.random() < (frac - 0.82) / 0.18) continue;
-      // すり鉢状の断面: 中心ほど深く、外へ行くほど浅い
-      const d = Math.round(depth * (1 - frac * frac) + rand(-1.2, 1.2));
-      if (d < 1) continue;
-      columns.push({ dx, dz, d, top: Math.round(lip * (1 - frac) + rand(0, 1)), frac });
+  for (let dx = -R; dx <= R; dx++) {
+    for (let dz = -R; dz <= R; dz++) {
+      const flat2 = dx * dx + dz * dz;
+      const h2 = R * R - flat2;
+      if (h2 < 0) continue;
+      const frac = Math.sqrt(flat2) / R;
+      // 外周は確率的に間引いて、輪郭が完全な球にならないようにする
+      if (frac > 0.86 && Math.random() < (frac - 0.86) / 0.14) continue;
+      const h = Math.round(Math.sqrt(h2) + rand(-1.2, 1.2));
+      if (h < 0) continue;
+      columns.push({ dx, dz, h, frac });
     }
   }
-  if (columns.length === 0) return;
+  if (columns.length === 0) {
+    if (onDone) onDone();
+    return;
+  }
   columns.sort((a, b) => a.frac - b.frac); // 中心から外へ広がっていくように見せる
 
+  const limit = blastBudget(R);
   let i = 0;
   const runId = system.runInterval(() => {
-    let budget = CRATER_BUDGET_PER_TICK;
-    while (i < columns.length && budget > 0) {
+    let writes = limit.writes;
+    let cells = limit.cells;
+    while (i < columns.length && writes > 0 && cells > 0) {
       const col = columns[i++];
       const x = cx + col.dx;
       const z = cz + col.dz;
-      const bottom = cy - col.d;
-      for (let y = cy + col.top; y >= bottom; y--) {
-        budget--;
+      for (let dy = col.h; dy >= -col.h; dy--) {
+        cells--;
         try {
-          const b = dimension.getBlock({ x, y, z });
+          const b = dimension.getBlock({ x, y: cy + dy, z });
           if (!b || b.typeId === "minecraft:air" || INDESTRUCTIBLE_BLOCKS.has(b.typeId)) continue;
           b.setType("minecraft:air");
+          writes--;
         } catch (err) {}
       }
-      // クレーターの底を焼け焦げた地面にする
-      if (scorch && Math.random() < 0.35) {
+      // 球の底を焼け焦げた地面にする
+      if (scorch && Math.random() < 0.3) {
         try {
-          const floor = dimension.getBlock({ x, y: bottom - 1, z });
+          const floor = dimension.getBlock({ x, y: cy - col.h - 1, z });
           if (floor && floor.typeId !== "minecraft:air" && !INDESTRUCTIBLE_BLOCKS.has(floor.typeId)) {
             floor.setType(Math.random() < 0.22 ? "minecraft:magma_block" : "minecraft:blackstone");
           }
         } catch (err) {}
       }
     }
-    if (i >= columns.length) system.clearRun(runId);
-  }, 1);
-}
-
-/**
- * 球状にブロックを消す。中心から外へ順に広がっていく。
- *
- * carveCrater と同じく1tickあたりの操作数に予算を設けてあるので、
- * 半径をいくら大きくしても1tickあたりの負荷は変わらない。
- *
- * @param onDone すべて消し終わったときに呼ばれる
- */
-export function carveSphere(dimension, center, radius, { onDone } = {}) {
-  const r = Math.max(1, Math.round(radius));
-  const cx = Math.round(center.x);
-  const cy = Math.round(center.y);
-  const cz = Math.round(center.z);
-
-  const cells = [];
-  for (let dx = -r; dx <= r; dx++) {
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dz = -r; dz <= r; dz++) {
-        const d2 = dx * dx + dy * dy + dz * dz;
-        if (d2 > r * r) continue;
-        // 外周は確率的に間引いて、輪郭を不揃いにする
-        const frac = Math.sqrt(d2) / r;
-        if (frac > 0.86 && Math.random() < (frac - 0.86) / 0.14) continue;
-        cells.push({ dx, dy, dz, d2 });
-      }
-    }
-  }
-  cells.sort((a, b) => a.d2 - b.d2);
-
-  let i = 0;
-  const runId = system.runInterval(() => {
-    let budget = CRATER_BUDGET_PER_TICK;
-    while (i < cells.length && budget-- > 0) {
-      const c = cells[i++];
-      try {
-        const b = dimension.getBlock({ x: cx + c.dx, y: cy + c.dy, z: cz + c.dz });
-        if (!b || b.typeId === "minecraft:air" || INDESTRUCTIBLE_BLOCKS.has(b.typeId)) continue;
-        b.setType("minecraft:air");
-      } catch (err) {}
-    }
-    if (i >= cells.length) {
+    if (i >= columns.length) {
       system.clearRun(runId);
       if (onDone) {
         try {
@@ -169,6 +135,11 @@ export function carveSphere(dimension, center, radius, { onDone } = {}) {
       }
     }
   }, 1);
+}
+
+/** 球状にブロックを消す (carveBlastSphere の別名。焼け焦げは残さない) */
+export function carveSphere(dimension, center, radius, { onDone } = {}) {
+  carveBlastSphere(dimension, center, { radius, onDone });
 }
 
 /**
@@ -195,7 +166,7 @@ export function carveShaft(dimension, center, { radius, top, bottom }) {
 
   let i = 0;
   const runId = system.runInterval(() => {
-    let budget = CRATER_BUDGET_PER_TICK;
+    let budget = BLOCK_BUDGET_PER_TICK;
     while (i < columns.length && budget > 0) {
       const col = columns[i++];
       for (let y = cy + top; y >= cy + bottom && budget > 0; y--) {
@@ -238,7 +209,7 @@ export function crumbleTerrain(dimension, center, { radius, depth = 6, height = 
 
     let i = 0;
     const runId = system.runInterval(() => {
-      let budget = CRATER_BUDGET_PER_TICK;
+      let budget = BLOCK_BUDGET_PER_TICK;
       while (i < cells.length && budget-- > 0) {
         const c = cells[i++];
         try {

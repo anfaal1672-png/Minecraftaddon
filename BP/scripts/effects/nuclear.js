@@ -8,7 +8,7 @@ import { darknessEffect, fireEffect, glowEffect, iceEffect, iceageEffect, lavaEf
 import { antiGravityEffect, beamEffect, bouncyEffect, chorusEffect, confusionEffect, endermanEffect, slimeEffect, speedEffect, swapEffect, teleportEffect } from "./motion.js";
 import { arrowEffect, fortuneEffect, musicEffect, treasureEffect, xpEffect } from "./spectacle.js";
 import { cactusEffect, desertEffect, earthquakeEffect, grassEffect, harvestEffect, honeyEffect } from "./terrain.js";
-import { carveCrater } from "../util/blocks.js";
+import { carveBlastSphere } from "../util/blocks.js";
 import { rand } from "../util/common.js";
 import { irradiateEntities, shockwaveKnockback } from "../util/entities.js";
 import { mushroomCloud, nukeImpact, radiationZone } from "../util/spectacle.js";
@@ -21,11 +21,12 @@ import { mushroomCloud, nukeImpact, radiationZone } from "../util/spectacle.js";
 /*  片方だけ直して他が置き去りになりやすかったため、手順は nuclearBlast に */
 /*  1本化し、段階ごとの違いはこの表だけにまとめた。                        */
 /*                                                                      */
-/*  crater … 掘るクレーターの半径と深さ。実際の破壊はここが受け持つ。     */
+/*  blastRadius … 消し飛ぶ球の半径。実際の破壊はここが受け持つ。          */
 /*            createExplosion は地面の耐爆性で威力を使い切ってしまい、    */
 /*            威力をいくら上げても横方向にはあまり広がらない (Minecraft   */
 /*            自体の仕様で、設定では解除できない)。そのため範囲の拡大は   */
-/*            爆発ではなくクレーターの掘削で表現している。                */
+/*            爆発ではなく球状の掘削で表現している。                      */
+/*            爆心地を中心とした球なので、上にも下にも同じだけ広がる。    */
 /* ==================================================================== */
 export const NUKE_TIERS = {
   nuke: {
@@ -35,7 +36,7 @@ export const NUKE_TIERS = {
     radiation: { radius: 8, duration: 600, amplifier: 0, lingerTicks: 300 },
     knockRadius: 18, knockStrength: 1.5,
     damageRadius: 20, maxDamage: 35,
-    crater: { radius: 16, depth: 6 },
+    blastRadius: 24,
     secondaryBlasts: 3, secondaryPower: 8,
     shakeRadius: 50, shakeIntensity: 0.6, shakeSeconds: 1.8,
   },
@@ -46,7 +47,7 @@ export const NUKE_TIERS = {
     radiation: { radius: 13, duration: 1000, amplifier: 1, lingerTicks: 500 },
     knockRadius: 30, knockStrength: 2.0,
     damageRadius: 30, maxDamage: 50,
-    crater: { radius: 26, depth: 10 },
+    blastRadius: 36,
     secondaryBlasts: 4, secondaryPower: 10,
     shakeRadius: 75, shakeIntensity: 0.8, shakeSeconds: 2.6,
   },
@@ -57,7 +58,7 @@ export const NUKE_TIERS = {
     radiation: { radius: 20, duration: 1800, amplifier: 2, lingerTicks: 1200 },
     knockRadius: 46, knockStrength: 2.6,
     damageRadius: 42, maxDamage: 70,
-    crater: { radius: 38, depth: 14 },
+    blastRadius: 50,
     secondaryBlasts: 5, secondaryPower: 12,
     shakeRadius: 110, shakeIntensity: 0.95, shakeSeconds: 3.5,
   },
@@ -84,7 +85,7 @@ export const NUKE_TIERS = {
     radiation: { radius: 28, duration: 2400, amplifier: 3, lingerTicks: 2400 },
     knockRadius: 70, knockStrength: 3.4,
     damageRadius: 60, maxDamage: 95,
-    crater: { radius: 52, depth: 19 },
+    blastRadius: 66,
     secondaryBlasts: 6, secondaryPower: 14,
     shakeRadius: 160, shakeIntensity: 1.0, shakeSeconds: 5.0,
   },
@@ -99,7 +100,7 @@ export const NUKE_TIERS = {
     radiation: { radius: 36, duration: 6000, amplifier: 4, lingerTicks: 3600 },
     knockRadius: 90, knockStrength: 3.8,
     damageRadius: 80, maxDamage: 110,
-    crater: { radius: 68, depth: 25 },
+    blastRadius: 80,
     secondaryBlasts: 8, secondaryPower: 16,
     shakeRadius: 220, shakeIntensity: 1.0, shakeSeconds: 6.0,
   },
@@ -114,15 +115,15 @@ export function nuclearBlast(dimension, center, tier) {
   radiationZone(dimension, center, tier.radiation);
   shockwaveKnockback(dimension, center, tier.knockRadius, tier.knockStrength);
   irradiateEntities(dimension, center, tier.damageRadius, tier.maxDamage);
-  carveCrater(dimension, center, { ...tier.crater, scorch: true });
+  carveBlastSphere(dimension, center, { radius: tier.blastRadius, scorch: true });
   nukeImpact(dimension, center, tier.shakeRadius, tier.shakeIntensity, tier.shakeSeconds);
 
   // クレーターの中に本物の爆発をいくつか散らす。
-  // 地形の破壊そのものは carveCrater が受け持つので、ここは音・炎・
+  // 地形の破壊そのものは carveBlastSphere が受け持つので、ここは音・炎・
   // 吹き飛びといった「本物の爆発らしさ」を足すための少数だけでいい。
   for (let i = 0; i < tier.secondaryBlasts; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const r = tier.crater.radius * 0.4 * Math.sqrt(Math.random());
+    const r = tier.blastRadius * 0.4 * Math.sqrt(Math.random());
     system.runTimeout(() => {
       try {
         dimension.createExplosion(
@@ -175,7 +176,7 @@ export function armageddonEffect(dimension, center) {
   radiationZone(dimension, center, { radius: 18, duration: 600, amplifier: 2 });
   shockwaveKnockback(dimension, center, 40, 2.6);
   irradiateEntities(dimension, center, 34, 65);
-  carveCrater(dimension, center, { radius: 44, depth: 16, scorch: true });
+  carveBlastSphere(dimension, center, { radius: 56, scorch: true });
   nukeImpact(dimension, center, 100, 0.95, 3.2);
 
   // ランダムな追加効果を数個、時間差で連続発動する
