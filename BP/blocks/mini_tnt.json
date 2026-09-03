@@ -5,7 +5,7 @@
       "identifier": "manytnt:mini_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:basic_group"
       }
     },
     "components": {

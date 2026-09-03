@@ -1,36 +1,43 @@
 /**
  * いろんなTNT追加アドオン — 入口。
  *
- * ここでは各機能を登録するだけで、中身はそれぞれのモジュールにある。
+ * ここは登録するだけ。中身はそれぞれのモジュールにある。
  *
- *   core/registry.js   TNTの一覧と設定 (data/tnt-table.js から作られる)
- *   core/ignite.js     着火。火打石・炎・レッドストーン・矢・連鎖のすべての入口
- *   core/explode.js    爆発の横取りと、威力・効果の適用
- *   core/stats.js      爆発回数の記録と実績
- *   core/announce.js   チャットへの案内文
- *   core/commands.js   /scriptevent で使えるコマンド
- *   effects/           種類ごとの特殊効果
- *   util/              エンティティ・ブロック・演出の小物
+ *   core/registry.js    TNTの一覧と設定 (data/tnt-table.js から作られる)
+ *   core/settings.js    ワールドごとの設定とゲームルールの尊重
+ *   core/jobs.js        重い処理を捌く共有のジョブ置き場
+ *   core/ignition.js    着火。火打石・炎・レッドストーン・矢・遠隔起爆の入口
+ *   core/fuse.js        導火線が燃えている間の追跡と演出
+ *   core/detonation.js  爆発の横取りと、威力・効果の適用
+ *   core/chain.js       連鎖爆発
+ *   core/stats.js       爆発の記録と実績
+ *   core/menu.js        図鑑と設定の画面
+ *   core/commands.js    /scriptevent と図鑑アイテム
+ *   effects/            種類ごとの特殊効果
+ *   lib/                座標・ブロック・エンティティ・演出の道具
  */
-import { registerMuteState } from "./core/announce.js";
-import { registerBasicCommands, registerStatsCommand } from "./core/commands.js";
-import {
-  registerArrowIgnition,
-  registerChainCapReset,
-  registerDetonator,
-  registerFlintIgnition,
-  registerIgniteComponent,
-} from "./core/ignite.js";
-import { registerExplosionHook } from "./core/explode.js";
+import { world } from "@minecraft/server";
+import { attempt } from "./core/log.js";
+import { registerChainCapReset } from "./core/chain.js";
+import { registerCatalogItem, registerCommands } from "./core/commands.js";
+import { registerExplosionHook } from "./core/detonation.js";
+import { registerFuseLoop } from "./core/fuse.js";
+import { registerIgnitionSources } from "./core/ignition.js";
+import { load as loadSettings } from "./core/settings.js";
+import { loadStats } from "./core/stats.js";
 
-registerMuteState();
-registerBasicCommands();
-registerStatsCommand();
+// ワールドが読み込まれる前に dynamic property は読めないので、
+// 保存してあるものはすべてここで読み直す。
+attempt("main:worldLoad", () =>
+  world.afterEvents.worldLoad.subscribe(() => {
+    loadSettings();
+    loadStats();
+  })
+);
 
-registerChainCapReset();
-registerIgniteComponent();
-registerFlintIgnition();
-registerDetonator();
-registerArrowIgnition();
-
+registerIgnitionSources();
+registerFuseLoop();
 registerExplosionHook();
+registerChainCapReset();
+registerCommands();
+registerCatalogItem();

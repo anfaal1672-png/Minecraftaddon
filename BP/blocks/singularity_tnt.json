@@ -5,7 +5,7 @@
       "identifier": "manytnt:singularity_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:chaos_group"
       }
     },
     "components": {

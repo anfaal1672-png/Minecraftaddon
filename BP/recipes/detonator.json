@@ -9,21 +9,18 @@
     ],
     "unlock": [
       {
-        "item": "minecraft:redstone"
+        "item": "minecraft:tnt"
       }
     ],
     "ingredients": [
       {
-        "item": "minecraft:redstone"
+        "item": "minecraft:redstone_torch"
       },
       {
-        "item": "minecraft:redstone"
+        "item": "minecraft:stick"
       },
       {
         "item": "minecraft:iron_ingot"
-      },
-      {
-        "item": "minecraft:redstone_torch"
       }
     ],
     "result": {

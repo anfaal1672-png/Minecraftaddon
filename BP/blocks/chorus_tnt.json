@@ -5,7 +5,7 @@
       "identifier": "manytnt:chorus_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:motion_group"
       }
     },
     "components": {

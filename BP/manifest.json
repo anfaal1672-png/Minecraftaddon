@@ -5,7 +5,7 @@
     "description": "72種類のユニークなTNTを追加します (BP)",
     "uuid": "5b0948bc-bb22-479e-a059-8ac3194998eb",
     "version": [
-      33,
+      34,
       0,
       0
     ],
@@ -20,7 +20,7 @@
       "type": "data",
       "uuid": "ea3363ba-dc1f-430d-a8c9-9c97f04462f7",
       "version": [
-        33,
+        34,
         0,
         0
       ]
@@ -31,7 +31,7 @@
       "uuid": "d1a2103c-406d-4b11-95ed-2bfa37c55d72",
       "entry": "scripts/main.js",
       "version": [
-        33,
+        34,
         0,
         0
       ]
@@ -41,6 +41,10 @@
     {
       "module_name": "@minecraft/server",
       "version": "2.7.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.1.0"
     }
   ]
 }

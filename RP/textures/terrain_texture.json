@@ -19,6 +19,18 @@
     "manytnt:mini_tnt_side": {
       "textures": "textures/blocks/mini_tnt_side"
     },
+    "manytnt:rocket_tnt_top": {
+      "textures": "textures/blocks/rocket_tnt_top"
+    },
+    "manytnt:rocket_tnt_side": {
+      "textures": "textures/blocks/rocket_tnt_side"
+    },
+    "manytnt:gacha_tnt_top": {
+      "textures": "textures/blocks/gacha_tnt_top"
+    },
+    "manytnt:gacha_tnt_side": {
+      "textures": "textures/blocks/gacha_tnt_side"
+    },
     "manytnt:nuke_tnt_top": {
       "textures": "textures/blocks/nuke_tnt_top"
     },
@@ -49,6 +61,12 @@
     "manytnt:antimatter_tnt_side": {
       "textures": "textures/blocks/antimatter_tnt_side"
     },
+    "manytnt:armageddon_tnt_top": {
+      "textures": "textures/blocks/armageddon_tnt_top"
+    },
+    "manytnt:armageddon_tnt_side": {
+      "textures": "textures/blocks/armageddon_tnt_side"
+    },
     "manytnt:ice_tnt_top": {
       "textures": "textures/blocks/ice_tnt_top"
     },
@@ -73,48 +91,6 @@
     "manytnt:thunder_tnt_side": {
       "textures": "textures/blocks/thunder_tnt_side"
     },
-    "manytnt:gravity_tnt_top": {
-      "textures": "textures/blocks/gravity_tnt_top"
-    },
-    "manytnt:gravity_tnt_side": {
-      "textures": "textures/blocks/gravity_tnt_side"
-    },
-    "manytnt:teleport_tnt_top": {
-      "textures": "textures/blocks/teleport_tnt_top"
-    },
-    "manytnt:teleport_tnt_side": {
-      "textures": "textures/blocks/teleport_tnt_side"
-    },
-    "manytnt:heal_tnt_top": {
-      "textures": "textures/blocks/heal_tnt_top"
-    },
-    "manytnt:heal_tnt_side": {
-      "textures": "textures/blocks/heal_tnt_side"
-    },
-    "manytnt:confetti_tnt_top": {
-      "textures": "textures/blocks/confetti_tnt_top"
-    },
-    "manytnt:confetti_tnt_side": {
-      "textures": "textures/blocks/confetti_tnt_side"
-    },
-    "manytnt:rainbow_tnt_top": {
-      "textures": "textures/blocks/rainbow_tnt_top"
-    },
-    "manytnt:rainbow_tnt_side": {
-      "textures": "textures/blocks/rainbow_tnt_side"
-    },
-    "manytnt:magnet_tnt_top": {
-      "textures": "textures/blocks/magnet_tnt_top"
-    },
-    "manytnt:magnet_tnt_side": {
-      "textures": "textures/blocks/magnet_tnt_side"
-    },
-    "manytnt:antigravity_tnt_top": {
-      "textures": "textures/blocks/antigravity_tnt_top"
-    },
-    "manytnt:antigravity_tnt_side": {
-      "textures": "textures/blocks/antigravity_tnt_side"
-    },
     "manytnt:lava_tnt_top": {
       "textures": "textures/blocks/lava_tnt_top"
     },
@@ -133,11 +109,131 @@
     "manytnt:darkness_tnt_side": {
       "textures": "textures/blocks/darkness_tnt_side"
     },
+    "manytnt:tsunami_tnt_top": {
+      "textures": "textures/blocks/tsunami_tnt_top"
+    },
+    "manytnt:tsunami_tnt_side": {
+      "textures": "textures/blocks/tsunami_tnt_side"
+    },
+    "manytnt:storm_tnt_top": {
+      "textures": "textures/blocks/storm_tnt_top"
+    },
+    "manytnt:storm_tnt_side": {
+      "textures": "textures/blocks/storm_tnt_side"
+    },
+    "manytnt:iceage_tnt_top": {
+      "textures": "textures/blocks/iceage_tnt_top"
+    },
+    "manytnt:iceage_tnt_side": {
+      "textures": "textures/blocks/iceage_tnt_side"
+    },
+    "manytnt:scorched_tnt_top": {
+      "textures": "textures/blocks/scorched_tnt_top"
+    },
+    "manytnt:scorched_tnt_side": {
+      "textures": "textures/blocks/scorched_tnt_side"
+    },
+    "manytnt:gravity_tnt_top": {
+      "textures": "textures/blocks/gravity_tnt_top"
+    },
+    "manytnt:gravity_tnt_side": {
+      "textures": "textures/blocks/gravity_tnt_side"
+    },
+    "manytnt:teleport_tnt_top": {
+      "textures": "textures/blocks/teleport_tnt_top"
+    },
+    "manytnt:teleport_tnt_side": {
+      "textures": "textures/blocks/teleport_tnt_side"
+    },
+    "manytnt:magnet_tnt_top": {
+      "textures": "textures/blocks/magnet_tnt_top"
+    },
+    "manytnt:magnet_tnt_side": {
+      "textures": "textures/blocks/magnet_tnt_side"
+    },
+    "manytnt:antigravity_tnt_top": {
+      "textures": "textures/blocks/antigravity_tnt_top"
+    },
+    "manytnt:antigravity_tnt_side": {
+      "textures": "textures/blocks/antigravity_tnt_side"
+    },
+    "manytnt:bouncy_tnt_top": {
+      "textures": "textures/blocks/bouncy_tnt_top"
+    },
+    "manytnt:bouncy_tnt_side": {
+      "textures": "textures/blocks/bouncy_tnt_side"
+    },
+    "manytnt:swap_tnt_top": {
+      "textures": "textures/blocks/swap_tnt_top"
+    },
+    "manytnt:swap_tnt_side": {
+      "textures": "textures/blocks/swap_tnt_side"
+    },
+    "manytnt:blackhole_tnt_top": {
+      "textures": "textures/blocks/blackhole_tnt_top"
+    },
+    "manytnt:blackhole_tnt_side": {
+      "textures": "textures/blocks/blackhole_tnt_side"
+    },
+    "manytnt:enderman_tnt_top": {
+      "textures": "textures/blocks/enderman_tnt_top"
+    },
+    "manytnt:enderman_tnt_side": {
+      "textures": "textures/blocks/enderman_tnt_side"
+    },
+    "manytnt:beam_tnt_top": {
+      "textures": "textures/blocks/beam_tnt_top"
+    },
+    "manytnt:beam_tnt_side": {
+      "textures": "textures/blocks/beam_tnt_side"
+    },
+    "manytnt:speed_tnt_top": {
+      "textures": "textures/blocks/speed_tnt_top"
+    },
+    "manytnt:speed_tnt_side": {
+      "textures": "textures/blocks/speed_tnt_side"
+    },
+    "manytnt:chorus_tnt_top": {
+      "textures": "textures/blocks/chorus_tnt_top"
+    },
+    "manytnt:chorus_tnt_side": {
+      "textures": "textures/blocks/chorus_tnt_side"
+    },
     "manytnt:summon_tnt_top": {
       "textures": "textures/blocks/summon_tnt_top"
     },
     "manytnt:summon_tnt_side": {
       "textures": "textures/blocks/summon_tnt_side"
+    },
+    "manytnt:ufo_tnt_top": {
+      "textures": "textures/blocks/ufo_tnt_top"
+    },
+    "manytnt:ufo_tnt_side": {
+      "textures": "textures/blocks/ufo_tnt_side"
+    },
+    "manytnt:snowgolem_tnt_top": {
+      "textures": "textures/blocks/snowgolem_tnt_top"
+    },
+    "manytnt:snowgolem_tnt_side": {
+      "textures": "textures/blocks/snowgolem_tnt_side"
+    },
+    "manytnt:bee_tnt_top": {
+      "textures": "textures/blocks/bee_tnt_top"
+    },
+    "manytnt:bee_tnt_side": {
+      "textures": "textures/blocks/bee_tnt_side"
+    },
+    "manytnt:slime_tnt_top": {
+      "textures": "textures/blocks/slime_tnt_top"
+    },
+    "manytnt:slime_tnt_side": {
+      "textures": "textures/blocks/slime_tnt_side"
+    },
+    "manytnt:animal_tnt_top": {
+      "textures": "textures/blocks/animal_tnt_top"
+    },
+    "manytnt:animal_tnt_side": {
+      "textures": "textures/blocks/animal_tnt_side"
     },
     "manytnt:earthquake_tnt_top": {
       "textures": "textures/blocks/earthquake_tnt_top"
@@ -145,11 +241,65 @@
     "manytnt:earthquake_tnt_side": {
       "textures": "textures/blocks/earthquake_tnt_side"
     },
-    "manytnt:bouncy_tnt_top": {
-      "textures": "textures/blocks/bouncy_tnt_top"
+    "manytnt:grass_tnt_top": {
+      "textures": "textures/blocks/grass_tnt_top"
     },
-    "manytnt:bouncy_tnt_side": {
-      "textures": "textures/blocks/bouncy_tnt_side"
+    "manytnt:grass_tnt_side": {
+      "textures": "textures/blocks/grass_tnt_side"
+    },
+    "manytnt:desert_tnt_top": {
+      "textures": "textures/blocks/desert_tnt_top"
+    },
+    "manytnt:desert_tnt_side": {
+      "textures": "textures/blocks/desert_tnt_side"
+    },
+    "manytnt:smelter_tnt_top": {
+      "textures": "textures/blocks/smelter_tnt_top"
+    },
+    "manytnt:smelter_tnt_side": {
+      "textures": "textures/blocks/smelter_tnt_side"
+    },
+    "manytnt:harvest_tnt_top": {
+      "textures": "textures/blocks/harvest_tnt_top"
+    },
+    "manytnt:harvest_tnt_side": {
+      "textures": "textures/blocks/harvest_tnt_side"
+    },
+    "manytnt:builder_tnt_top": {
+      "textures": "textures/blocks/builder_tnt_top"
+    },
+    "manytnt:builder_tnt_side": {
+      "textures": "textures/blocks/builder_tnt_side"
+    },
+    "manytnt:shaft_tnt_top": {
+      "textures": "textures/blocks/shaft_tnt_top"
+    },
+    "manytnt:shaft_tnt_side": {
+      "textures": "textures/blocks/shaft_tnt_side"
+    },
+    "manytnt:honey_tnt_top": {
+      "textures": "textures/blocks/honey_tnt_top"
+    },
+    "manytnt:honey_tnt_side": {
+      "textures": "textures/blocks/honey_tnt_side"
+    },
+    "manytnt:cactus_tnt_top": {
+      "textures": "textures/blocks/cactus_tnt_top"
+    },
+    "manytnt:cactus_tnt_side": {
+      "textures": "textures/blocks/cactus_tnt_side"
+    },
+    "manytnt:obsidian_tnt_top": {
+      "textures": "textures/blocks/obsidian_tnt_top"
+    },
+    "manytnt:obsidian_tnt_side": {
+      "textures": "textures/blocks/obsidian_tnt_side"
+    },
+    "manytnt:heal_tnt_top": {
+      "textures": "textures/blocks/heal_tnt_top"
+    },
+    "manytnt:heal_tnt_side": {
+      "textures": "textures/blocks/heal_tnt_side"
     },
     "manytnt:web_tnt_top": {
       "textures": "textures/blocks/web_tnt_top"
@@ -163,11 +313,59 @@
     "manytnt:treasure_tnt_side": {
       "textures": "textures/blocks/treasure_tnt_side"
     },
-    "manytnt:swap_tnt_top": {
-      "textures": "textures/blocks/swap_tnt_top"
+    "manytnt:daynight_tnt_top": {
+      "textures": "textures/blocks/daynight_tnt_top"
     },
-    "manytnt:swap_tnt_side": {
-      "textures": "textures/blocks/swap_tnt_side"
+    "manytnt:daynight_tnt_side": {
+      "textures": "textures/blocks/daynight_tnt_side"
+    },
+    "manytnt:xp_tnt_top": {
+      "textures": "textures/blocks/xp_tnt_top"
+    },
+    "manytnt:xp_tnt_side": {
+      "textures": "textures/blocks/xp_tnt_side"
+    },
+    "manytnt:fortune_tnt_top": {
+      "textures": "textures/blocks/fortune_tnt_top"
+    },
+    "manytnt:fortune_tnt_side": {
+      "textures": "textures/blocks/fortune_tnt_side"
+    },
+    "manytnt:invisibility_tnt_top": {
+      "textures": "textures/blocks/invisibility_tnt_top"
+    },
+    "manytnt:invisibility_tnt_side": {
+      "textures": "textures/blocks/invisibility_tnt_side"
+    },
+    "manytnt:feast_tnt_top": {
+      "textures": "textures/blocks/feast_tnt_top"
+    },
+    "manytnt:feast_tnt_side": {
+      "textures": "textures/blocks/feast_tnt_side"
+    },
+    "manytnt:glow_tnt_top": {
+      "textures": "textures/blocks/glow_tnt_top"
+    },
+    "manytnt:glow_tnt_side": {
+      "textures": "textures/blocks/glow_tnt_side"
+    },
+    "manytnt:vacuum_tnt_top": {
+      "textures": "textures/blocks/vacuum_tnt_top"
+    },
+    "manytnt:vacuum_tnt_side": {
+      "textures": "textures/blocks/vacuum_tnt_side"
+    },
+    "manytnt:confetti_tnt_top": {
+      "textures": "textures/blocks/confetti_tnt_top"
+    },
+    "manytnt:confetti_tnt_side": {
+      "textures": "textures/blocks/confetti_tnt_side"
+    },
+    "manytnt:rainbow_tnt_top": {
+      "textures": "textures/blocks/rainbow_tnt_top"
+    },
+    "manytnt:rainbow_tnt_side": {
+      "textures": "textures/blocks/rainbow_tnt_side"
     },
     "manytnt:confusion_tnt_top": {
       "textures": "textures/blocks/confusion_tnt_top"
@@ -175,23 +373,11 @@
     "manytnt:confusion_tnt_side": {
       "textures": "textures/blocks/confusion_tnt_side"
     },
-    "manytnt:blackhole_tnt_top": {
-      "textures": "textures/blocks/blackhole_tnt_top"
-    },
-    "manytnt:blackhole_tnt_side": {
-      "textures": "textures/blocks/blackhole_tnt_side"
-    },
     "manytnt:disco_tnt_top": {
       "textures": "textures/blocks/disco_tnt_top"
     },
     "manytnt:disco_tnt_side": {
       "textures": "textures/blocks/disco_tnt_side"
-    },
-    "manytnt:ufo_tnt_top": {
-      "textures": "textures/blocks/ufo_tnt_top"
-    },
-    "manytnt:ufo_tnt_side": {
-      "textures": "textures/blocks/ufo_tnt_side"
     },
     "manytnt:fireworks_tnt_top": {
       "textures": "textures/blocks/fireworks_tnt_top"
@@ -211,203 +397,17 @@
     "manytnt:curse_tnt_side": {
       "textures": "textures/blocks/curse_tnt_side"
     },
-    "manytnt:grass_tnt_top": {
-      "textures": "textures/blocks/grass_tnt_top"
-    },
-    "manytnt:grass_tnt_side": {
-      "textures": "textures/blocks/grass_tnt_side"
-    },
-    "manytnt:desert_tnt_top": {
-      "textures": "textures/blocks/desert_tnt_top"
-    },
-    "manytnt:desert_tnt_side": {
-      "textures": "textures/blocks/desert_tnt_side"
-    },
-    "manytnt:snowgolem_tnt_top": {
-      "textures": "textures/blocks/snowgolem_tnt_top"
-    },
-    "manytnt:snowgolem_tnt_side": {
-      "textures": "textures/blocks/snowgolem_tnt_side"
-    },
-    "manytnt:bee_tnt_top": {
-      "textures": "textures/blocks/bee_tnt_top"
-    },
-    "manytnt:bee_tnt_side": {
-      "textures": "textures/blocks/bee_tnt_side"
-    },
     "manytnt:arrow_tnt_top": {
       "textures": "textures/blocks/arrow_tnt_top"
     },
     "manytnt:arrow_tnt_side": {
       "textures": "textures/blocks/arrow_tnt_side"
     },
-    "manytnt:rocket_tnt_top": {
-      "textures": "textures/blocks/rocket_tnt_top"
-    },
-    "manytnt:rocket_tnt_side": {
-      "textures": "textures/blocks/rocket_tnt_side"
-    },
     "manytnt:music_tnt_top": {
       "textures": "textures/blocks/music_tnt_top"
     },
     "manytnt:music_tnt_side": {
       "textures": "textures/blocks/music_tnt_side"
-    },
-    "manytnt:tsunami_tnt_top": {
-      "textures": "textures/blocks/tsunami_tnt_top"
-    },
-    "manytnt:tsunami_tnt_side": {
-      "textures": "textures/blocks/tsunami_tnt_side"
-    },
-    "manytnt:smelter_tnt_top": {
-      "textures": "textures/blocks/smelter_tnt_top"
-    },
-    "manytnt:smelter_tnt_side": {
-      "textures": "textures/blocks/smelter_tnt_side"
-    },
-    "manytnt:harvest_tnt_top": {
-      "textures": "textures/blocks/harvest_tnt_top"
-    },
-    "manytnt:harvest_tnt_side": {
-      "textures": "textures/blocks/harvest_tnt_side"
-    },
-    "manytnt:daynight_tnt_top": {
-      "textures": "textures/blocks/daynight_tnt_top"
-    },
-    "manytnt:daynight_tnt_side": {
-      "textures": "textures/blocks/daynight_tnt_side"
-    },
-    "manytnt:storm_tnt_top": {
-      "textures": "textures/blocks/storm_tnt_top"
-    },
-    "manytnt:storm_tnt_side": {
-      "textures": "textures/blocks/storm_tnt_side"
-    },
-    "manytnt:xp_tnt_top": {
-      "textures": "textures/blocks/xp_tnt_top"
-    },
-    "manytnt:xp_tnt_side": {
-      "textures": "textures/blocks/xp_tnt_side"
-    },
-    "manytnt:enderman_tnt_top": {
-      "textures": "textures/blocks/enderman_tnt_top"
-    },
-    "manytnt:enderman_tnt_side": {
-      "textures": "textures/blocks/enderman_tnt_side"
-    },
-    "manytnt:slime_tnt_top": {
-      "textures": "textures/blocks/slime_tnt_top"
-    },
-    "manytnt:slime_tnt_side": {
-      "textures": "textures/blocks/slime_tnt_side"
-    },
-    "manytnt:animal_tnt_top": {
-      "textures": "textures/blocks/animal_tnt_top"
-    },
-    "manytnt:animal_tnt_side": {
-      "textures": "textures/blocks/animal_tnt_side"
-    },
-    "manytnt:iceage_tnt_top": {
-      "textures": "textures/blocks/iceage_tnt_top"
-    },
-    "manytnt:iceage_tnt_side": {
-      "textures": "textures/blocks/iceage_tnt_side"
-    },
-    "manytnt:fortune_tnt_top": {
-      "textures": "textures/blocks/fortune_tnt_top"
-    },
-    "manytnt:fortune_tnt_side": {
-      "textures": "textures/blocks/fortune_tnt_side"
-    },
-    "manytnt:builder_tnt_top": {
-      "textures": "textures/blocks/builder_tnt_top"
-    },
-    "manytnt:builder_tnt_side": {
-      "textures": "textures/blocks/builder_tnt_side"
-    },
-    "manytnt:shaft_tnt_top": {
-      "textures": "textures/blocks/shaft_tnt_top"
-    },
-    "manytnt:shaft_tnt_side": {
-      "textures": "textures/blocks/shaft_tnt_side"
-    },
-    "manytnt:beam_tnt_top": {
-      "textures": "textures/blocks/beam_tnt_top"
-    },
-    "manytnt:beam_tnt_side": {
-      "textures": "textures/blocks/beam_tnt_side"
-    },
-    "manytnt:invisibility_tnt_top": {
-      "textures": "textures/blocks/invisibility_tnt_top"
-    },
-    "manytnt:invisibility_tnt_side": {
-      "textures": "textures/blocks/invisibility_tnt_side"
-    },
-    "manytnt:speed_tnt_top": {
-      "textures": "textures/blocks/speed_tnt_top"
-    },
-    "manytnt:speed_tnt_side": {
-      "textures": "textures/blocks/speed_tnt_side"
-    },
-    "manytnt:honey_tnt_top": {
-      "textures": "textures/blocks/honey_tnt_top"
-    },
-    "manytnt:honey_tnt_side": {
-      "textures": "textures/blocks/honey_tnt_side"
-    },
-    "manytnt:scorched_tnt_top": {
-      "textures": "textures/blocks/scorched_tnt_top"
-    },
-    "manytnt:scorched_tnt_side": {
-      "textures": "textures/blocks/scorched_tnt_side"
-    },
-    "manytnt:feast_tnt_top": {
-      "textures": "textures/blocks/feast_tnt_top"
-    },
-    "manytnt:feast_tnt_side": {
-      "textures": "textures/blocks/feast_tnt_side"
-    },
-    "manytnt:cactus_tnt_top": {
-      "textures": "textures/blocks/cactus_tnt_top"
-    },
-    "manytnt:cactus_tnt_side": {
-      "textures": "textures/blocks/cactus_tnt_side"
-    },
-    "manytnt:obsidian_tnt_top": {
-      "textures": "textures/blocks/obsidian_tnt_top"
-    },
-    "manytnt:obsidian_tnt_side": {
-      "textures": "textures/blocks/obsidian_tnt_side"
-    },
-    "manytnt:glow_tnt_top": {
-      "textures": "textures/blocks/glow_tnt_top"
-    },
-    "manytnt:glow_tnt_side": {
-      "textures": "textures/blocks/glow_tnt_side"
-    },
-    "manytnt:vacuum_tnt_top": {
-      "textures": "textures/blocks/vacuum_tnt_top"
-    },
-    "manytnt:vacuum_tnt_side": {
-      "textures": "textures/blocks/vacuum_tnt_side"
-    },
-    "manytnt:chorus_tnt_top": {
-      "textures": "textures/blocks/chorus_tnt_top"
-    },
-    "manytnt:chorus_tnt_side": {
-      "textures": "textures/blocks/chorus_tnt_side"
-    },
-    "manytnt:armageddon_tnt_top": {
-      "textures": "textures/blocks/armageddon_tnt_top"
-    },
-    "manytnt:armageddon_tnt_side": {
-      "textures": "textures/blocks/armageddon_tnt_side"
-    },
-    "manytnt:gacha_tnt_top": {
-      "textures": "textures/blocks/gacha_tnt_top"
-    },
-    "manytnt:gacha_tnt_side": {
-      "textures": "textures/blocks/gacha_tnt_side"
     },
     "manytnt:singularity_tnt_top": {
       "textures": "textures/blocks/singularity_tnt_top"

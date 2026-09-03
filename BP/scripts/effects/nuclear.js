@@ -1,32 +1,27 @@
 /**
- * 核・超核・水素爆弾・ツァーリボンバ・反物質・終焉。
+ * 核兵器系のTNT。核・超核・水素爆弾・ツァーリボンバ・反物質・終焉。
+ *
+ * 段階ごとの違いは NUKE_TIERS の数値だけにしてある。手順は nuclearBlast に
+ * 1本化してあるので、演出を直すときも1か所で済む。
  */
-import { system } from "@minecraft/server";
-import { announce } from "../core/announce.js";
-import { animalEffect, beeEffect, feastEffect, invisibilityEffect, snowgolemEffect, summonEffect, webEffect } from "./creatures.js";
-import { darknessEffect, fireEffect, glowEffect, iceEffect, iceageEffect, lavaEffect, obsidianEffect, poisonEffect, scorchedEffect, thunderEffect, tsunamiEffect, vacuumEffect, waterEffect } from "./elemental.js";
-import { antiGravityEffect, beamEffect, bouncyEffect, chorusEffect, confusionEffect, endermanEffect, slimeEffect, speedEffect, swapEffect, teleportEffect } from "./motion.js";
-import { arrowEffect, fortuneEffect, musicEffect, treasureEffect, xpEffect } from "./spectacle.js";
-import { cactusEffect, desertEffect, earthquakeEffect, grassEffect, harvestEffect, honeyEffect } from "./terrain.js";
-import { carveBlastSphere } from "../util/blocks.js";
-import { rand } from "../util/common.js";
-import { irradiateEntities, shockwaveKnockback } from "../util/entities.js";
-import { mushroomCloud, nukeImpact, radiationZone } from "../util/spectacle.js";
+import { announce } from "../core/chat.js";
+import { mayBreakBlocks, maySetFire, scaledRadius } from "../core/settings.js";
+import { carveSphere } from "../lib/terrain.js";
+import { deepBoom, later, mushroomCloud, particle, shake } from "../lib/fx.js";
+import { entitiesNear, irradiate, knockOutward } from "../lib/entities.js";
+import { pick, randomInDisk, shuffled } from "../lib/math.js";
+import { EFFECTS } from "./index.js";
+import { igniteFires } from "./elemental.js";
 
 /* ==================================================================== */
-/*  核系TNTの段階表                                                      */
+/*  段階表                                                              */
 /*                                                                      */
-/*  以前は核・超核・水素爆弾・ツァーリボンバ・反物質の5つに、ほぼ同じ手順が */
-/*  それぞれ個別に書かれていた。数値だけが違うのに手順が5箇所に散っていて、 */
-/*  片方だけ直して他が置き去りになりやすかったため、手順は nuclearBlast に */
-/*  1本化し、段階ごとの違いはこの表だけにまとめた。                        */
-/*                                                                      */
-/*  blastRadius … 消し飛ぶ球の半径。実際の破壊はここが受け持つ。          */
-/*            createExplosion は地面の耐爆性で威力を使い切ってしまい、    */
-/*            威力をいくら上げても横方向にはあまり広がらない (Minecraft   */
-/*            自体の仕様で、設定では解除できない)。そのため範囲の拡大は   */
-/*            爆発ではなく球状の掘削で表現している。                      */
-/*            爆心地を中心とした球なので、上にも下にも同じだけ広がる。    */
+/*  blastRadius … 消し飛ぶ球の半径。実際の破壊はここが受け持つ。         */
+/*      createExplosion は地面の耐爆性で威力を使い切ってしまい、         */
+/*      威力をいくら上げても横にはあまり広がらない (Minecraft 自体の     */
+/*      仕様で、設定では解除できない)。そのため範囲の拡大は爆発ではなく  */
+/*      球状の掘削で表現している。爆心地を中心とした球なので、           */
+/*      上にも下にも同じだけ広がる。                                    */
 /* ==================================================================== */
 export const NUKE_TIERS = {
   nuke: {
@@ -63,17 +58,17 @@ export const NUKE_TIERS = {
     shakeRadius: 110, shakeIntensity: 0.95, shakeSeconds: 3.5,
   },
   /*
-   * ツァーリボンバ(弱体化前の100メガトン版)。
+   * ツァーリボンバ (弱体化前の100メガトン版)。
    *
    * 実際の記録:
    * ・実験で使われた50メガトン版でも、火球半径 約4.6km、全壊半径 約35km
-   * ・弱体化前の100メガトン設計は、その約1.26倍(降伏出力の立方根比)相当と
-   *   推定されており、全壊半径は概算で40〜45km、火球は直径10kmに達したとされる
-   * ・きのこ雲は実測で高度60〜64km(50メガトン版)
+   * ・弱体化前の100メガトン設計はその約1.26倍 (出力の立方根比) 相当と
+   *   推定され、全壊半径は概算で40〜45km、火球は直径10kmに達したとされる
+   * ・きのこ雲は実測で高度60〜64km (50メガトン版)
    *
-   * これを1ブロック=1mでそのまま再現しようとすると、半径44kmは一辺88,000
-   * ブロック超・面積にして約77億ブロックとなり、どんな端末でも即クラッシュする。
-   * そのため実寸ではなく「このアドオンの中で最大級の規模」として表現している。
+   * 1ブロック=1mでそのまま再現すると半径44kmは面積にして約77億ブロックとなり、
+   * どんな端末でも即クラッシュする。そのため実寸ではなく
+   * 「このアドオンの中で最大級の規模」として表現している。
    */
   tsarBomba: {
     messages: [
@@ -90,8 +85,8 @@ export const NUKE_TIERS = {
     shakeRadius: 160, shakeIntensity: 1.0, shakeSeconds: 5.0,
   },
   /*
-   * 反物質爆弾。核分裂・核融合の先、物質と反物質の対消滅を再現した、
-   * このアドオンの頂点に立つ一撃。クレーターは直径136ブロックに達する。
+   * 反物質爆弾。核分裂・核融合の先、物質と反物質の対消滅。
+   * このアドオンの頂点で、消える球は直径160ブロックに達する。
    */
   antimatter: {
     messages: ["§f§l⚛⚛⚛ 反物質爆弾が対消滅を起こした...この世の終わりだ ⚛⚛⚛§r"],
@@ -106,100 +101,132 @@ export const NUKE_TIERS = {
   },
 };
 
-/** 核系TNTの共通処理。段階ごとの違いは NUKE_TIERS だけを見ればよい。 */
+/**
+ * 爆心地に残る放射能。
+ *
+ * ゾーン内にいる間は一定間隔でウィザー効果を塗り直す。塗り直すたびに
+ * lingerTicks ぶんの残り時間を与えるので、ゾーンを一瞬でも通れば
+ * その後外に出ても最低 lingerTicks は被曝が続く (= 汚染された扱い)。
+ * 追加の爆発は起こさないので、何回重ねても処理は軽いまま。
+ */
+export function radiationZone(dimension, center, opts) {
+  const radius = opts.radius ?? 6;
+  const duration = opts.duration ?? 600;
+  const amplifier = opts.amplifier ?? 0;
+  const linger = opts.lingerTicks ?? 300;
+  const interval = 20;
+  const rounds = Math.max(1, Math.round(duration / interval));
+
+  let elapsed = 0;
+  const tick = () => {
+    elapsed++;
+    for (const ent of entitiesNear(dimension, center, radius, { items: false })) {
+      try {
+        ent.addEffect("minecraft:wither", linger, { amplifier, showParticles: true });
+      } catch (err) {
+        /* 効果を受け付けないモブもいる */
+      }
+    }
+    particle(dimension, "minecraft:witchspell_emitter", randomInDisk(center, radius * 0.8, 1));
+    if (elapsed < rounds) later(interval, tick);
+  };
+  tick();
+}
+
+/** 核系の共通処理。段階ごとの違いは NUKE_TIERS だけを見ればよい */
 export function nuclearBlast(dimension, center, tier) {
   for (const line of tier.messages) announce(line);
 
   mushroomCloud(dimension, center, tier.cloud);
-  fireEffect(dimension, center, tier.fireRadius);
+  igniteFires(dimension, center, tier.fireRadius);
   radiationZone(dimension, center, tier.radiation);
-  shockwaveKnockback(dimension, center, tier.knockRadius, tier.knockStrength);
-  irradiateEntities(dimension, center, tier.damageRadius, tier.maxDamage);
-  carveBlastSphere(dimension, center, { radius: tier.blastRadius, scorch: true });
-  nukeImpact(dimension, center, tier.shakeRadius, tier.shakeIntensity, tier.shakeSeconds);
+  knockOutward(dimension, center, tier.knockRadius, tier.knockStrength);
+  irradiate(dimension, center, tier.damageRadius, tier.maxDamage);
 
-  // クレーターの中に本物の爆発をいくつか散らす。
-  // 地形の破壊そのものは carveBlastSphere が受け持つので、ここは音・炎・
-  // 吹き飛びといった「本物の爆発らしさ」を足すための少数だけでいい。
+  const radius = scaledRadius(tier.blastRadius);
+  // 掘削は他のどのジョブより優先する。ここが遅れると「爆発したのに
+  // 地形が残っている」という一番目立つ形で破綻するため。
+  carveSphere(dimension, center, { radius, scorch: true, priority: 10 });
+
+  shake(dimension, center, {
+    radius: tier.shakeRadius,
+    intensity: tier.shakeIntensity,
+    seconds: tier.shakeSeconds,
+  });
+  deepBoom(dimension, center);
+
+  // クレーターの中に本物の爆発をいくつか散らす。地形の破壊は carveSphere が
+  // 受け持つので、ここは音・炎・吹き飛びといった「らしさ」を足すだけでよい。
   for (let i = 0; i < tier.secondaryBlasts; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const r = tier.blastRadius * 0.4 * Math.sqrt(Math.random());
-    system.runTimeout(() => {
+    const spot = randomInDisk(center, radius * 0.4);
+    later(2 + i * 3, () => {
       try {
-        dimension.createExplosion(
-          {
-            x: center.x + Math.cos(angle) * r,
-            y: center.y + rand(-1, 2),
-            z: center.z + Math.sin(angle) * r,
-          },
-          tier.secondaryPower,
-          { breaksBlocks: true, causesFire: true, allowUnderwater: true }
-        );
-      } catch (err) {}
-    }, 2 + i * 3);
+        dimension.createExplosion(spot, tier.secondaryPower, {
+          breaksBlocks: mayBreakBlocks(),
+          causesFire: maySetFire(),
+          allowUnderwater: true,
+        });
+      } catch (err) {
+        /* 読み込み外なら諦める */
+      }
+    });
   }
 }
 
-export function nukeEffect(dimension, center) {
-  nuclearBlast(dimension, center, NUKE_TIERS.nuke);
-}
-
-export function ultraNukeEffect(dimension, center) {
-  nuclearBlast(dimension, center, NUKE_TIERS.ultraNuke);
-}
-
-export function hydrogenBombEffect(dimension, center) {
-  nuclearBlast(dimension, center, NUKE_TIERS.hydrogenBomb);
-}
-
-export function tsarBombaEffect(dimension, center) {
-  nuclearBlast(dimension, center, NUKE_TIERS.tsarBomba);
-}
-
-export function antimatterEffect(dimension, center) {
-  nuclearBlast(dimension, center, NUKE_TIERS.antimatter);
-}
+export const nukeEffect = (dimension, center) => nuclearBlast(dimension, center, NUKE_TIERS.nuke);
+export const ultraNukeEffect = (dimension, center) => nuclearBlast(dimension, center, NUKE_TIERS.ultraNuke);
+export const hydrogenBombEffect = (dimension, center) => nuclearBlast(dimension, center, NUKE_TIERS.hydrogenBomb);
+export const tsarBombaEffect = (dimension, center) => nuclearBlast(dimension, center, NUKE_TIERS.tsarBomba);
+export const antimatterEffect = (dimension, center) => nuclearBlast(dimension, center, NUKE_TIERS.antimatter);
 
 /**
- * 究極TNT(終焉TNT): このアドオンの集大成。
- * 単体でも強力な爆発(核系と同じ「1tickに1発」方式で安全に処理)に加え、
- * ランダムに選んだ4〜5個の効果を時間差で連続発動させる、まさに何でもありの一撃。
- * どの効果が出るかは毎回変わるので、riddleのように結果を予測できないのが売り。
+ * 終焉TNT。このアドオンの集大成。
+ *
+ * 核級の爆発に加えて、ランダムに選んだ4〜5個の効果を時間差で連続発動させる。
+ * 何が出るかは毎回変わるので、結果を予測できないのが売り。
  */
+export const ARMAGEDDON_POOL = [
+  "iceEffect", "poisonEffect", "thunderEffect", "teleportEffect", "antiGravityEffect",
+  "lavaEffect", "waterEffect", "darknessEffect", "summonEffect", "earthquakeEffect",
+  "bouncyEffect", "webEffect", "treasureEffect", "swapEffect", "confusionEffect",
+  "grassEffect", "desertEffect", "snowgolemEffect", "beeEffect", "arrowEffect",
+  "musicEffect", "tsunamiEffect", "harvestEffect", "xpEffect", "endermanEffect",
+  "slimeEffect", "animalEffect", "iceageEffect", "fortuneEffect", "beamEffect",
+  "invisibilityEffect", "speedEffect", "honeyEffect", "scorchedEffect", "feastEffect",
+  "cactusEffect", "obsidianEffect", "glowEffect", "vacuumEffect", "chorusEffect",
+];
+
 export function armageddonEffect(dimension, center) {
-  try {
-    announce("§0§l☠☠☠ 終焉TNTが世界の理を破壊した ☠☠☠§r");
-  } catch (err) {}
+  announce("§0§l☠☠☠ 終焉TNTが世界の理を破壊した ☠☠☠§r");
 
   mushroomCloud(dimension, center, { stemHeight: 30, capRadius: 26, duration: 120 });
-  fireEffect(dimension, center, 12);
+  igniteFires(dimension, center, 12);
   radiationZone(dimension, center, { radius: 18, duration: 600, amplifier: 2 });
-  shockwaveKnockback(dimension, center, 40, 2.6);
-  irradiateEntities(dimension, center, 34, 65);
-  carveBlastSphere(dimension, center, { radius: 56, scorch: true });
-  nukeImpact(dimension, center, 100, 0.95, 3.2);
+  knockOutward(dimension, center, 40, 2.6);
+  irradiate(dimension, center, 34, 65);
+  carveSphere(dimension, center, { radius: scaledRadius(56), scorch: true, priority: 10 });
+  shake(dimension, center, { radius: 100, intensity: 0.95, seconds: 3.2 });
+  deepBoom(dimension, center);
 
-  // ランダムな追加効果を数個、時間差で連続発動する
-  const pool = [
-    iceEffect, poisonEffect, thunderEffect, teleportEffect, antiGravityEffect,
-    lavaEffect, waterEffect, darknessEffect, summonEffect, earthquakeEffect,
-    bouncyEffect, webEffect, treasureEffect, swapEffect, confusionEffect,
-    grassEffect, desertEffect, snowgolemEffect, beeEffect, arrowEffect,
-    musicEffect, tsunamiEffect, harvestEffect, xpEffect, endermanEffect,
-    slimeEffect, animalEffect, iceageEffect, fortuneEffect, beamEffect,
-    invisibilityEffect, speedEffect, honeyEffect, scorchedEffect, feastEffect,
-    cactusEffect, obsidianEffect, glowEffect, vacuumEffect, chorusEffect,
-  ];
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  const picks = shuffled.slice(0, 4 + Math.floor(Math.random() * 2));
-  picks.forEach((fn, i) => {
-    system.runTimeout(() => {
-      try {
-        announce(`§5[終焉] ${i + 1}発目: §d${fn.name}§5 発動！§r`);
-      } catch (err) {}
-      try {
-        fn(dimension, center);
-      } catch (err) {}
-    }, 30 + i * 25);
+  // 追加効果を時間差で連続発動する。
+  // 名前で引くのは、効果どうしを直接 import し合うと参照が絡まるため。
+  const picks = shuffled(ARMAGEDDON_POOL).slice(0, 4 + Math.floor(Math.random() * 2));
+  picks.forEach((name, i) => {
+    later(30 + i * 25, () => {
+      const fn = EFFECTS[name];
+      if (!fn) return;
+      announce(`§5[終焉] ${i + 1}発目: §d${name}§5 発動！§r`);
+      fn(dimension, center);
+    });
   });
+}
+
+/** ランダムに1つ引いて発動する (虹TNTなどで使う共通処理) */
+export function rollRandomEffect(dimension, center, pool, label) {
+  const name = pick(pool);
+  const fn = EFFECTS[name];
+  if (!fn) return null;
+  if (label) announce(`${label}§e${name}§r`);
+  fn(dimension, center);
+  return name;
 }

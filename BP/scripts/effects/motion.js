@@ -1,258 +1,207 @@
 /**
  * 押す・引く・飛ばす・入れ替えるといった、動きに関わるTNT。
  */
-import { system, ItemStack } from "@minecraft/server";
-import { announce } from "../core/announce.js";
-import { distSq } from "../util/common.js";
-import { nearbyEntities, pushEntity, safeTeleport, shockwaveKnockback } from "../util/entities.js";
+import { ItemStack } from "@minecraft/server";
+import { announce } from "../core/chat.js";
+import { mayBreakBlocks } from "../core/settings.js";
+import { carveSphere } from "../lib/terrain.js";
+import { burst, later, particle, repeat, ring, shake, sound } from "../lib/fx.js";
+import {
+  addEffect, applyEffects, dropItem, entitiesNear, itemsNear, knockOutward,
+  locationOf, pullInward, push, safeTeleport, spawn,
+} from "../lib/entities.js";
+import { distSq, randomInDisk, randomInSphere } from "../lib/math.js";
 
 export function gravityEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 8)) {
-    try {
-      const loc = ent.location;
-      const dx = loc.x - center.x;
-      const dz = loc.z - center.z;
-      const dist = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
-      ent.applyKnockback({ x: dx / dist, z: dz / dist }, 1.4);
-    } catch (err) {}
-  }
+  // 導火線の間に引き寄せておいて、爆発でまとめて叩き落とす
+  knockOutward(dimension, center, 8, 1.4, { lift: -0.2 });
+  applyEffects(dimension, center, 8, [["minecraft:slowness", 60, 2]]);
+  ring(dimension, "minecraft:endrod", center, 4, { count: 20, y: 0.2 });
+  sound(dimension, "random.anvil_land", center, { pitch: 0.5 });
 }
 
 export function antiGravityEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 8)) {
-    try {
-      pushEntity(ent, { x: 0, y: 1.4, z: 0 });
-      ent.addEffect("minecraft:levitation", 60, { amplifier: 4, showParticles: true });
-    } catch (err) {}
+  for (const ent of entitiesNear(dimension, center, 8)) {
+    push(ent, { x: 0, y: 1.4, z: 0 });
+    addEffect(ent, "minecraft:levitation", 60, { amplifier: 4, showParticles: true });
+    // 落ちてくるときに死なないようにする。打ち上げただけで殺すのは意地が悪い
+    addEffect(ent, "minecraft:slow_falling", 140, { amplifier: 0, showParticles: false });
   }
-  try {
-    dimension.spawnParticle("minecraft:huge_explosion_emitter", center);
-  } catch (err) {}
+  burst(dimension, "minecraft:endrod", center, { count: 24, radius: 4 });
+  sound(dimension, "mob.shulker.teleport", center);
 }
 
 export function teleportEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 8)) {
+  for (const ent of entitiesNear(dimension, center, 8)) {
+    const from = locationOf(ent);
     safeTeleport(ent, () => ({
       x: center.x + Math.floor((Math.random() - 0.5) * 24),
       y: center.y + 2,
       z: center.z + Math.floor((Math.random() - 0.5) * 24),
     }));
+    if (from) particle(dimension, "minecraft:endrod", from);
   }
+  sound(dimension, "mob.endermen.portal", center);
 }
 
 export function chorusEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    const moved = safeTeleport(ent, () => ({
-      x: center.x + (Math.random() - 0.5) * 10,
-      y: center.y + Math.random() * 4,
-      z: center.z + (Math.random() - 0.5) * 10,
-    }));
-    if (!moved) continue;
-    try {
-      dimension.playSound("mob.endermen.portal", ent.location);
-    } catch (err) {}
+  for (const ent of entitiesNear(dimension, center, 6)) {
+    const moved = safeTeleport(ent, () => randomInSphere({ ...center, y: center.y + 2 }, 6));
+    if (moved) sound(dimension, "mob.endermen.portal", locationOf(ent) ?? center);
   }
+  // エンドらしさ。コーラスの実とパーティクル
   for (let i = 0; i < 3; i++) {
-    try {
-      dimension.spawnItem(new ItemStack("minecraft:chorus_fruit", 1), {
-        x: center.x + (Math.random() - 0.5) * 2,
-        y: center.y + 0.5,
-        z: center.z + (Math.random() - 0.5) * 2,
-      });
-    } catch (err) {}
+    dropItem(dimension, new ItemStack("minecraft:chorus_fruit", 1), randomInDisk(center, 1, 1));
   }
+  if (mayBreakBlocks()) {
+    // 足元にエンドストーンの小島を作る
+    for (let i = 0; i < 12; i++) {
+      const p = randomInDisk({ ...center, y: center.y - 1 }, 3);
+      const loc = { x: Math.floor(p.x), y: Math.floor(center.y) - 1, z: Math.floor(p.z) };
+      const block = dimension.getBlock?.(loc);
+      if (block && block.typeId !== "minecraft:air") {
+        try {
+          block.setType("minecraft:end_stone");
+        } catch (err) {}
+      }
+    }
+  }
+  burst(dimension, "minecraft:endrod", center, { count: 16, radius: 3 });
 }
 
 export function endermanEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    try {
-      if (ent.typeId !== "minecraft:player") continue;
-      const from = { ...ent.location };
-      safeTeleport(ent, () => ({
-        x: from.x + (Math.random() - 0.5) * 16,
-        y: from.y,
-        z: from.z + (Math.random() - 0.5) * 16,
-      }));
-    } catch (err) {}
+  for (const ent of entitiesNear(dimension, center, 6)) {
+    if (ent.typeId !== "minecraft:player") continue;
+    const from = locationOf(ent);
+    if (!from) continue;
+    safeTeleport(ent, () => ({
+      x: from.x + (Math.random() - 0.5) * 16,
+      y: from.y,
+      z: from.z + (Math.random() - 0.5) * 16,
+    }));
   }
-  for (let i = 0; i < 3; i++) {
-    try {
-      dimension.spawnEntity("minecraft:enderman", {
-        x: center.x + (Math.random() - 0.5) * 4,
-        y: center.y,
-        z: center.z + (Math.random() - 0.5) * 4,
-      });
-    } catch (err) {}
-  }
+  for (let i = 0; i < 3; i++) spawn(dimension, "minecraft:enderman", randomInDisk(center, 2));
+  sound(dimension, "mob.endermen.scream", center);
 }
 
 export function swapEffect(dimension, center) {
-  const ents = nearbyEntities(dimension, center, 10)
-    .filter((e) => e.typeId !== "minecraft:item" && e.typeId !== "minecraft:xp_orb");
-  if (ents.length < 2) return;
-  ents.sort((a, b) => {
-    const da = distSq(a.location, center);
-    const db = distSq(b.location, center);
-    return da - db;
-  });
-  const a = ents[0];
-  const b = ents[1];
-  const locA = { ...a.location };
-  const locB = { ...b.location };
+  const targets = entitiesNear(dimension, center, 10, { items: false })
+    .sort((a, b) => distSq(a.location, center) - distSq(b.location, center));
+  if (targets.length < 2) return;
+
+  const [a, b] = targets;
+  const locA = locationOf(a);
+  const locB = locationOf(b);
+  if (!locA || !locB) return;
+
   // 片方だけ飛んで重なるのを避けるため、両方成功したときだけ入れ替える
   if (!safeTeleport(a, () => locB, 1)) return;
   if (!safeTeleport(b, () => locA, 1)) {
     safeTeleport(a, () => locA, 1);
     return;
   }
-  try {
-    dimension.spawnParticle("minecraft:endrod", locA);
-    dimension.spawnParticle("minecraft:endrod", locB);
-  } catch (err) {}
+  particle(dimension, "minecraft:endrod", locA);
+  particle(dimension, "minecraft:endrod", locB);
+  sound(dimension, "mob.endermen.portal", center);
 }
 
 export function bouncyEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    try {
-      pushEntity(ent, { x: (Math.random() - 0.5) * 0.4, y: 1.6, z: (Math.random() - 0.5) * 0.4 });
-      ent.addEffect("minecraft:jump_boost", 100, { amplifier: 3, showParticles: false });
-    } catch (err) {}
+  for (const ent of entitiesNear(dimension, center, 6)) {
+    push(ent, { x: (Math.random() - 0.5) * 0.4, y: 1.6, z: (Math.random() - 0.5) * 0.4 });
+    addEffect(ent, "minecraft:jump_boost", 100, { amplifier: 3 });
+    // 跳ね上げた責任は取る
+    addEffect(ent, "minecraft:slow_falling", 120, { amplifier: 0 });
   }
-  try {
-    dimension.playSound("mob.slime.big", center);
-  } catch (err) {}
-}
-
-export function slimeEffect(dimension, center) {
-  for (let i = 0; i < 3; i++) {
-    try {
-      dimension.spawnEntity("minecraft:slime", {
-        x: center.x + (Math.random() - 0.5) * 3,
-        y: center.y,
-        z: center.z + (Math.random() - 0.5) * 3,
-      });
-    } catch (err) {}
-  }
-  for (const ent of nearbyEntities(dimension, center, 5)) {
-    pushEntity(ent, { x: 0, y: 0.8, z: 0 });
-  }
+  sound(dimension, "mob.slime.big", center);
+  ring(dimension, "minecraft:villager_happy", center, 3, { count: 14, y: 0.3 });
 }
 
 export function speedEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    try {
-      ent.addEffect("minecraft:speed", 300, { amplifier: 3, showParticles: false });
-    } catch (err) {}
-  }
+  applyEffects(dimension, center, 6, [
+    ["minecraft:speed", 300, 3],
+    ["minecraft:jump_boost", 300, 1],
+    ["minecraft:haste", 300, 2],
+  ]);
+  ring(dimension, "minecraft:basic_crit_particle", center, 3, { count: 18, y: 0.4 });
+  sound(dimension, "random.levelup", center, { pitch: 1.6 });
 }
 
+/**
+ * ビームTNT。4方向に伸びる光線が、触れたものを焼く。
+ * 光線が届いた先までしっかり見えるよう、1tickに1マスずつ伸ばしている。
+ */
 export function beamEffect(dimension, center) {
   const dirs = [{ x: 1, z: 0 }, { x: -1, z: 0 }, { x: 0, z: 1 }, { x: 0, z: -1 }];
-  for (const d of dirs) {
-    for (let dist = 1; dist <= 14; dist++) {
-      const loc = { x: center.x + d.x * dist, y: center.y, z: center.z + d.z * dist };
-      system.runTimeout(() => {
-        try {
-          dimension.spawnParticle("minecraft:endrod", loc);
-        } catch (err) {}
-        for (const ent of nearbyEntities(dimension, loc, 1.2)) {
+  const LENGTH = 14;
+  for (const dir of dirs) {
+    for (let step = 1; step <= LENGTH; step++) {
+      const loc = { x: center.x + dir.x * step, y: center.y + 1, z: center.z + dir.z * step };
+      later(step, () => {
+        particle(dimension, "minecraft:endrod", loc);
+        for (const ent of entitiesNear(dimension, loc, 1.2, { items: false })) {
           try {
             ent.applyDamage(4, { cause: "entityExplosion" });
           } catch (err) {}
         }
-      }, dist);
+      });
     }
   }
+  sound(dimension, "beacon.activate", center);
 }
 
 export function magnetBurstEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    if (ent.typeId !== "minecraft:item" && ent.typeId !== "minecraft:xp_orb") continue;
+  // 導火線の間に吸い寄せたぶんを、まとめて撒き散らす
+  for (const ent of itemsNear(dimension, center, 6)) {
     try {
-      ent.applyImpulse({ x: (Math.random() - 0.5) * 0.3, y: 0.3, z: (Math.random() - 0.5) * 0.3 });
+      ent.applyImpulse(randomInSphere({ x: 0, y: 0.3, z: 0 }, 0.3));
     } catch (err) {}
   }
-  try {
-    dimension.spawnParticle("minecraft:villager_happy", center);
-  } catch (err) {}
+  burst(dimension, "minecraft:villager_happy", center, { count: 16, radius: 3 });
+  sound(dimension, "random.orb", center, { pitch: 0.8 });
+}
+
+export function slimeEffect(dimension, center) {
+  for (let i = 0; i < 3; i++) spawn(dimension, "minecraft:slime", randomInDisk(center, 1.5));
+  for (const ent of entitiesNear(dimension, center, 5)) push(ent, { x: 0, y: 0.8, z: 0 });
+  if (mayBreakBlocks()) {
+    for (let i = 0; i < 8; i++) {
+      const p = randomInDisk(center, 3);
+      const loc = { x: Math.floor(p.x), y: Math.floor(center.y), z: Math.floor(p.z) };
+      const block = dimension.getBlock?.(loc);
+      if (block && block.typeId === "minecraft:air") {
+        try {
+          block.setType("minecraft:slime");
+        } catch (err) {}
+      }
+    }
+  }
+  sound(dimension, "mob.slime.small", center);
 }
 
 /**
- * ブラックホールTNT: 広範囲を数秒かけて中心に吸い込み、
- * 中心付近のブロックを消し去った後、最後に一気に弾け飛ばす。
+ * ブラックホールTNT。数秒かけて周囲を吸い込み、
+ * 中心のブロックを消し去ったあと、最後に一気に弾ける。
  */
 export function blackholeEffect(dimension, center) {
-  try {
-    announce("§5§l●黒 ブラックホールTNTが空間を歪めた ●黒§r");
-  } catch (err) {}
+  announce("§5§l● ブラックホールTNTが空間を歪めた ●§r");
+  sound(dimension, "portal.portal", center, { pitch: 0.5 });
 
-  const radius = 16;
-  let pulls = 0;
-  const pullId = system.runInterval(() => {
-    pulls++;
-    for (const ent of nearbyEntities(dimension, center, radius)) {
-      try {
-        const loc = ent.location;
-        const dx = center.x - loc.x;
-        const dy = center.y - loc.y;
-        const dz = center.z - loc.z;
-        const dist = Math.max(0.5, Math.sqrt(dx * dx + dy * dy + dz * dz));
-        const strength = 0.3;
-        pushEntity(ent, {
-          x: (dx / dist) * strength,
-          y: (dy / dist) * strength * 0.5,
-          z: (dz / dist) * strength,
-        });
-      } catch (err) {}
-    }
-    for (let n = 0; n < 6; n++) {
-      const ang = Math.random() * Math.PI * 2;
-      const r = Math.random() * 5;
-      try {
-        dimension.spawnParticle("minecraft:basic_smoke_particle", {
-          x: center.x + Math.cos(ang) * r,
-          y: center.y + (Math.random() - 0.5) * 3,
-          z: center.z + Math.sin(ang) * r,
-        });
-      } catch (err) {}
-    }
-    if (pulls >= 12) {
-      system.clearRun(pullId);
-      // 中心付近のブロックを消し去る (吸い込まれた跡)
-      const R = 3;
-      for (let dx = -R; dx <= R; dx++) {
-        for (let dy = -R; dy <= R; dy++) {
-          for (let dz = -R; dz <= R; dz++) {
-            if (dx * dx + dy * dy + dz * dz > R * R) continue;
-            try {
-              const b = dimension.getBlock({ x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz });
-              if (b && b.typeId !== "minecraft:bedrock") b.setType("minecraft:air");
-            } catch (err) {}
-          }
-        }
-      }
-      try {
-        dimension.createExplosion(center, 6, { breaksBlocks: false, causesFire: false });
-      } catch (err) {}
-      shockwaveKnockback(dimension, center, 16, 2.0);
-    }
-  }, 4);
-}
+  const RADIUS = 16;
+  repeat(12, 4, (i) => {
+    pullInward(dimension, center, RADIUS, 1.2, { vertical: 0.5, cap: 0.4 });
+    // 渦を巻く事象の地平面
+    ring(dimension, "minecraft:basic_smoke_particle", center, 2 + (i % 5), {
+      count: 10, spin: i * 0.4, y: (i % 3) - 1,
+    });
+  });
 
-export function confusionEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
+  later(48, () => {
+    if (mayBreakBlocks()) carveSphere(dimension, center, { radius: 3, priority: 5 });
     try {
-      ent.addEffect("minecraft:nausea", 160, { amplifier: 2, showParticles: false });
-      ent.addEffect("minecraft:slowness", 80, { amplifier: 1, showParticles: false });
+      dimension.createExplosion(center, 6, { breaksBlocks: false, causesFire: false });
     } catch (err) {}
-  }
-  for (let n = 0; n < 10; n++) {
-    try {
-      dimension.spawnParticle("minecraft:mob_spell_particle", {
-        x: center.x + (Math.random() - 0.5) * 3,
-        y: center.y + Math.random() * 2,
-        z: center.z + (Math.random() - 0.5) * 3,
-      });
-    } catch (err) {}
-  }
+    knockOutward(dimension, center, RADIUS, 2.0);
+    shake(dimension, center, { radius: 30, intensity: 0.5, seconds: 1.2 });
+    sound(dimension, "random.explode", center, { pitch: 0.6 });
+  });
 }

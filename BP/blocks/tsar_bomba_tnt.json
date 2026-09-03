@@ -5,7 +5,7 @@
       "identifier": "manytnt:tsar_bomba_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:nuclear_group"
       }
     },
     "components": {

@@ -1,0 +1,108 @@
+/**
+ * 属性カテゴリのTNT。
+ *
+ * 火・水・氷・雷といった自然の力を撒くTNT。
+ *
+ * 書式は data/schema.mjs を参照。カテゴリはこのファイルに入っていること自体で決まる。
+ */
+export default [
+  {
+    id: "ice_tnt",
+    name: { ja: "氷結TNT", en: "Ice TNT" },
+    desc: { ja: "周囲を凍らせ、触れたものを鈍足にする。", en: "Freezes the area solid and slows what it touches." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#56b4e2", emblem: "snowflake", trail: "minecraft:snowflake_particle" },
+    effect: "iceEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:snowball", "minecraft:snowball"] },
+  },
+  {
+    id: "poison_tnt",
+    name: { ja: "毒TNT", en: "Poison TNT" },
+    desc: { ja: "毒の霧をまき散らし、範囲内のモブを蝕む。", en: "Sprays a poison cloud that eats away at everything near." },
+    blast: { power: 3, breaks: true, fire: false },
+    visual: { color: "#5c9c2a", emblem: "flask", trail: "minecraft:witchspell_emitter" },
+    effect: "poisonEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:spider_eye"] },
+  },
+  {
+    id: "fire_tnt",
+    name: { ja: "火炎TNT", en: "Fire TNT" },
+    desc: { ja: "一帯を火の海に変える。", en: "Turns the surroundings into a sea of flame." },
+    blast: { power: 6, breaks: true, fire: true },
+    visual: { color: "#e0521a", emblem: "flame", trail: "minecraft:basic_flame_particle" },
+    effect: "fireEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:blaze_powder"] },
+  },
+  {
+    id: "thunder_tnt",
+    name: { ja: "雷TNT", en: "Thunder TNT" },
+    desc: { ja: "落雷を連続で呼び込む。", en: "Calls down a barrage of lightning strikes." },
+    blast: { power: 4, breaks: true, fire: false },
+    visual: { color: "#d8cc22", emblem: "bolt", trail: "minecraft:totem_particle" },
+    effect: "thunderEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:lightning_rod"] },
+  },
+  {
+    id: "lava_tnt",
+    name: { ja: "溶岩TNT", en: "Lava TNT" },
+    desc: { ja: "溶岩溜まりを作り出す。", en: "Leaves a pool of lava behind." },
+    blast: { power: 8, breaks: true, fire: true },
+    visual: { color: "#c24a0a", emblem: "lava", trail: "minecraft:basic_flame_particle" },
+    effect: "lavaEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:magma"] },
+  },
+  {
+    id: "water_tnt",
+    name: { ja: "水TNT", en: "Water TNT" },
+    desc: { ja: "水を撒き、火を消し、溶岩を固める。", en: "Spreads water, snuffs fire and hardens lava." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#2a7aca", emblem: "droplet", trail: "minecraft:basic_bubble_particle" },
+    effect: "waterEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:prismarine_shard"] },
+  },
+  {
+    id: "darkness_tnt",
+    name: { ja: "暗闇TNT", en: "Darkness TNT" },
+    desc: { ja: "光源を消し去り、視界を奪う。", en: "Kills the light sources and blinds everything nearby." },
+    blast: { power: 2, breaks: false, fire: false },
+    visual: { color: "#262030", band: "#1a1622", emblem: "moon", trail: "minecraft:basic_smoke_particle" },
+    effect: "darknessEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:ink_sac"] },
+  },
+  {
+    id: "tsunami_tnt",
+    name: { ja: "津波TNT", en: "Tsunami TNT" },
+    desc: { ja: "巨大な波が広がり、すべてを押し流す。", en: "A giant wave spreads out and sweeps everything away." },
+    blast: { power: 2, breaks: false, fire: false },
+    visual: { color: "#1a5aa2", emblem: "wave", trail: "minecraft:basic_bubble_particle" },
+    effect: "tsunamiEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:heart_of_the_sea"] },
+  },
+  {
+    id: "storm_tnt",
+    name: { ja: "嵐TNT", en: "Storm TNT" },
+    desc: { ja: "雷雨を呼び、落雷を降らせる。", en: "Calls a thunderstorm and drops lightning." },
+    blast: { power: 3, breaks: true, fire: false },
+    visual: { color: "#4c5668", emblem: "cloud", trail: "minecraft:totem_particle" },
+    effect: "stormEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:trident"] },
+  },
+  {
+    id: "iceage_tnt",
+    name: { ja: "氷河期TNT", en: "Ice Age TNT" },
+    desc: { ja: "一帯を氷河に沈め、吹雪を巻き起こす。", en: "Buries the area in glacier ice and blizzard." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#a8dcea", emblem: "glacier", trail: "minecraft:snowflake_particle" },
+    effect: "iceageEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:blue_ice", "minecraft:blue_ice"] },
+  },
+  {
+    id: "scorched_tnt",
+    name: { ja: "焦土TNT", en: "Scorched TNT" },
+    desc: { ja: "地表を焼き尽くし、ネザーのような焦土に変える。", en: "Burns the surface into scorched, nether-like ground." },
+    blast: { power: 4, breaks: true, fire: true },
+    visual: { color: "#3c322a", band: "#2a221c", emblem: "flame", trail: "minecraft:basic_flame_particle" },
+    effect: "scorchedEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:netherrack", "minecraft:blaze_powder"] },
+  },
+];

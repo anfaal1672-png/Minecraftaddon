@@ -4,6 +4,9 @@
   "texture_data": {
     "manytnt_detonator": {
       "textures": "textures/items/detonator"
+    },
+    "manytnt_catalog": {
+      "textures": "textures/items/catalog"
     }
   }
 }

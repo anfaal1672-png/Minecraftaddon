@@ -5,7 +5,7 @@
       "identifier": "manytnt:darkness_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:elemental_group"
       }
     },
     "components": {

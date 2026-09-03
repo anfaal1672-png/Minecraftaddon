@@ -10,7 +10,10 @@
       "properties": {
         "manytnt:kind": {
           "type": "int",
-          "range": [0, 127],
+          "range": [
+            0,
+            127
+          ],
           "default": 0,
           "client_sync": true
         }
@@ -24,7 +27,7 @@
       "minecraft:conditional_bandwidth_optimization": {
         "default_values": {
           "max_dropped_ticks": 5,
-          "max_optimized_distance": 80.0,
+          "max_optimized_distance": 80,
           "use_motion_prediction_hints": true
         }
       },
@@ -40,7 +43,10 @@
         "is_pushable_by_piston": true
       },
       "minecraft:type_family": {
-        "family": ["tnt", "inanimate"]
+        "family": [
+          "tnt",
+          "inanimate"
+        ]
       }
     },
     "component_groups": {
@@ -51,14 +57,153 @@
           "power": 4,
           "fuse_length": {
             "range_min": 0.5,
-            "range_max": 2.0
+            "range_max": 2
           }
+        }
+      },
+      "manytnt:fuse_50": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 2.5
+        }
+      },
+      "manytnt:fuse_60": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 3
+        }
+      },
+      "manytnt:fuse_80": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 4
+        }
+      },
+      "manytnt:fuse_90": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 4.5
+        }
+      },
+      "manytnt:fuse_100": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 5
+        }
+      },
+      "manytnt:fuse_110": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 5.5
+        }
+      },
+      "manytnt:fuse_120": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 6
+        }
+      },
+      "manytnt:fuse_140": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 7
+        }
+      },
+      "manytnt:fuse_160": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 8
         }
       }
     },
     "events": {
       "manytnt:short_fuse": {
-        "add": { "component_groups": ["manytnt:short_fuse"] }
+        "add": {
+          "component_groups": [
+            "manytnt:short_fuse"
+          ]
+        }
+      },
+      "manytnt:fuse_50": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_50"
+          ]
+        }
+      },
+      "manytnt:fuse_60": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_60"
+          ]
+        }
+      },
+      "manytnt:fuse_80": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_80"
+          ]
+        }
+      },
+      "manytnt:fuse_90": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_90"
+          ]
+        }
+      },
+      "manytnt:fuse_100": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_100"
+          ]
+        }
+      },
+      "manytnt:fuse_110": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_110"
+          ]
+        }
+      },
+      "manytnt:fuse_120": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_120"
+          ]
+        }
+      },
+      "manytnt:fuse_140": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_140"
+          ]
+        }
+      },
+      "manytnt:fuse_160": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_160"
+          ]
+        }
       }
     }
   }

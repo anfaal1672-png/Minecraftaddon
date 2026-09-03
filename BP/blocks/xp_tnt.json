@@ -5,7 +5,7 @@
       "identifier": "manytnt:xp_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:utility_group"
       }
     },
     "components": {

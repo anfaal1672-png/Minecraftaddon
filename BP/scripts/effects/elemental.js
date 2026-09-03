@@ -1,392 +1,246 @@
 /**
- * 火・水・氷・雷・毒といった自然の力を扱うTNT。
+ * 火・水・氷・雷・毒といった、自然の力を撒くTNT。
  */
-import { world, system, ItemStack } from "@minecraft/server";
-import { trySetBlock } from "../util/blocks.js";
-import { nearbyEntities } from "../util/entities.js";
+import { WeatherType } from "@minecraft/server";
+import { mayBreakBlocks } from "../core/settings.js";
+import { blockAt, setBlock, setIfEmpty, trySetBlock, WATER_BLOCKS } from "../lib/blocks.js";
+import { scanDisk, scanSphere } from "../lib/terrain.js";
+import { burst, later, repeat, ring, scatter, sound } from "../lib/fx.js";
+import { applyEffects, entitiesNear, knockOutward, spawn } from "../lib/entities.js";
+import { randomInDisk } from "../lib/math.js";
+
+/* ------------------------------------------------------------------ */
+/*  氷と雪                                                             */
+/* ------------------------------------------------------------------ */
+
+/** 水を氷に、地面の上を薄雪にする共通処理 */
+function freezeArea(dimension, center, { radius, layers, snowChance, name }) {
+  if (!mayBreakBlocks()) return;
+  scanDisk(dimension, center, { radius, layers, name }, (dim, loc) => {
+    const block = blockAt(dim, loc);
+    if (!block) return;
+    if (WATER_BLOCKS.has(block.typeId)) {
+      block.setType("minecraft:ice");
+      return;
+    }
+    if (block.typeId !== "minecraft:air" || Math.random() > snowChance) return;
+    const below = blockAt(dim, { x: loc.x, y: loc.y - 1, z: loc.z });
+    if (below && below.typeId !== "minecraft:air") trySetBlock(dim, loc, ["minecraft:snow_layer"]);
+  });
+}
 
 export function iceEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 6)) {
-    try {
-      ent.addEffect("minecraft:slowness", 100, { amplifier: 3, showParticles: true });
-    } catch (err) {}
-  }
-  const R = 4;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dz = -R; dz <= R; dz++) {
-      for (let dy = -2; dy <= 2; dy++) {
-        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
-        try {
-          const b = dimension.getBlock(loc);
-          if (!b) continue;
-          if (b.typeId === "minecraft:water" || b.typeId === "minecraft:flowing_water") {
-            b.setType("minecraft:ice");
-          } else if (b.typeId === "minecraft:air" && Math.random() < 0.25) {
-            const below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-            if (below && below.typeId !== "minecraft:air") {
-              b.setType("minecraft:snow_layer");
-            }
-          }
-        } catch (err) {}
-      }
-    }
-  }
-  for (let n = 0; n < 10; n++) {
-    try {
-      dimension.spawnParticle("minecraft:snowflake_particle", {
-        x: center.x + (Math.random() - 0.5) * 6,
-        y: center.y + Math.random() * 2,
-        z: center.z + (Math.random() - 0.5) * 6,
-      });
-    } catch (err) {}
-  }
+  applyEffects(dimension, center, 6, [["minecraft:slowness", 100, 3, true]]);
+  freezeArea(dimension, center, { radius: 4, layers: [-2, 2], snowChance: 0.25, name: "ice" });
+  scatter(dimension, "minecraft:snowflake_particle", center, { count: 12, radius: 3, height: 2 });
+  sound(dimension, "random.glass", center, { pitch: 1.4 });
 }
 
 export function iceageEffect(dimension, center) {
-  const R = 7;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dy = -1; dy <= 2; dy++) {
-      for (let dz = -R; dz <= R; dz++) {
-        if (dx * dx + dz * dz > R * R) continue;
-        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
-        try {
-          const b = dimension.getBlock(loc);
-          if (!b) continue;
-          if (b.typeId === "minecraft:water") b.setType("minecraft:ice");
-          else if (b.typeId === "minecraft:air" && Math.random() < 0.3) {
-            const below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-            if (below && below.typeId !== "minecraft:air") trySetBlock(dimension, loc, ["minecraft:snow_layer"]);
-          }
-        } catch (err) {}
-      }
-    }
-  }
-  for (const ent of nearbyEntities(dimension, center, 8)) {
-    try {
-      ent.addEffect("minecraft:slowness", 200, { amplifier: 4, showParticles: true });
-    } catch (err) {}
-  }
+  applyEffects(dimension, center, 8, [["minecraft:slowness", 200, 4, true]]);
+  freezeArea(dimension, center, { radius: 7, layers: [-1, 2], snowChance: 0.3, name: "iceage" });
+  // 吹雪。上から降りてくるように見せる
+  repeat(20, 4, (i) => {
+    scatter(dimension, "minecraft:snowflake_particle", { ...center, y: center.y + 3 }, {
+      count: 8, radius: 8, height: 2,
+    });
+    if (i % 5 === 0) sound(dimension, "random.glass", center, { pitch: 0.7 });
+  });
 }
 
-export function poisonEffect(dimension, center) {
-  let rounds = 0;
-  const id = system.runInterval(() => {
-    rounds++;
-    for (const ent of nearbyEntities(dimension, center, 6)) {
-      try {
-        ent.addEffect("minecraft:poison", 60, { amplifier: 1, showParticles: true });
-      } catch (err) {}
-    }
-    try {
-      dimension.spawnParticle("minecraft:mob_spell_particle", center);
-    } catch (err) {}
-    if (rounds >= 5) system.clearRun(id);
-  }, 20);
+/* ------------------------------------------------------------------ */
+/*  火と溶岩                                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 地表に火を撒く。核系からも呼ばれる。
+ * 火は「空気の下に地面がある」ところにしか置けないので、そこだけ選ぶ。
+ */
+export function igniteFires(dimension, center, radius = 4, density = 0.35) {
+  if (!mayBreakBlocks()) return;
+  scanDisk(dimension, center, { radius, layers: [0, 0], name: "fire" }, (dim, loc) => {
+    if (Math.random() > density) return;
+    const here = blockAt(dim, loc);
+    if (!here || here.typeId !== "minecraft:air") return;
+    const below = blockAt(dim, { x: loc.x, y: loc.y - 1, z: loc.z });
+    if (!below || below.typeId === "minecraft:air" || WATER_BLOCKS.has(below.typeId)) return;
+    setBlock(dim, loc, "minecraft:fire");
+  });
 }
 
-export function fireEffect(dimension, center, radius = 4) {
-  const R = radius;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dz = -R; dz <= R; dz++) {
-      const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
-      if (Math.random() > 0.35) continue;
-      try {
-        const b = dimension.getBlock(loc);
-        const below = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-        if (b && b.typeId === "minecraft:air" && below && below.typeId !== "minecraft:air" && below.typeId !== "minecraft:water") {
-          b.setType("minecraft:fire");
-        }
-      } catch (err) {}
+export function fireEffect(dimension, center) {
+  igniteFires(dimension, center, 5);
+  for (const ent of entitiesNear(dimension, center, 5, { items: false })) {
+    try {
+      ent.setOnFire(4, true);
+    } catch (err) {
+      /* 火に強いモブもいる */
     }
   }
+  burst(dimension, "minecraft:basic_flame_particle", center, { count: 20, radius: 3 });
+  sound(dimension, "mob.ghast.fireball", center);
 }
 
 export function lavaEffect(dimension, center) {
-  const base = { x: Math.floor(center.x), y: Math.floor(center.y), z: Math.floor(center.z) };
-  trySetBlock(dimension, base, ["minecraft:lava"]);
-  const offsets = [
-    { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 },
-  ];
-  for (const o of offsets) {
-    if (Math.random() < 0.5) {
-      trySetBlock(dimension, { x: base.x + o.x, y: base.y, z: base.z + o.z }, ["minecraft:lava"]);
-    }
+  if (mayBreakBlocks()) {
+    // 溜まりの形にする。中心は必ず、周りは半分の確率で
+    scanDisk(dimension, center, { radius: 2, layers: [0, 0], name: "lava" }, (dim, loc, cell) => {
+      if (cell.d2 > 0 && Math.random() < 0.5) return;
+      setIfEmpty(dim, loc, "minecraft:lava");
+    });
   }
-  for (const ent of nearbyEntities(dimension, center, 5)) {
+  for (const ent of entitiesNear(dimension, center, 5, { items: false })) {
     try {
       ent.setOnFire(6, true);
     } catch (err) {}
   }
+  sound(dimension, "bucket.empty_lava", center);
 }
+
+export function scorchedEffect(dimension, center) {
+  if (!mayBreakBlocks()) return;
+  const BURNABLE = new Set([
+    "minecraft:grass_block", "minecraft:dirt", "minecraft:podzol",
+    "minecraft:mycelium", "minecraft:moss_block", "minecraft:coarse_dirt",
+  ]);
+  scanDisk(dimension, center, { radius: 5, layers: [-1, -1], name: "scorched" }, (dim, loc) => {
+    const block = blockAt(dim, loc);
+    if (!block || !BURNABLE.has(block.typeId)) return;
+    block.setType(Math.random() < 0.3 ? "minecraft:netherrack" : "minecraft:coarse_dirt");
+  });
+  scatter(dimension, "minecraft:basic_smoke_particle", center, { count: 16, radius: 5, height: 2 });
+  sound(dimension, "random.fizz", center);
+}
+
+/* ------------------------------------------------------------------ */
+/*  水                                                                 */
+/* ------------------------------------------------------------------ */
 
 export function waterEffect(dimension, center) {
-  const base = { x: Math.floor(center.x), y: Math.floor(center.y), z: Math.floor(center.z) };
-  trySetBlock(dimension, base, ["minecraft:water"]);
-  for (const ent of nearbyEntities(dimension, center, 6)) {
+  if (mayBreakBlocks()) {
+    setIfEmpty(dimension, center, "minecraft:water");
+    // 火を消す
+    scanDisk(dimension, center, { radius: 3, layers: [0, 1], name: "water" }, (dim, loc) => {
+      const block = blockAt(dim, loc);
+      if (block && block.typeId === "minecraft:fire") block.setType("minecraft:air");
+    });
+  }
+  for (const ent of entitiesNear(dimension, center, 6)) {
     try {
       ent.extinguishFire(true);
-      const loc = ent.location;
-      const dx = loc.x - center.x;
-      const dz = loc.z - center.z;
-      const dist = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
-      ent.applyKnockback({ x: dx / dist, z: dz / dist }, 0.8);
     } catch (err) {}
   }
-  const R = 3;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dz = -R; dz <= R; dz++) {
-      const loc = { x: base.x + dx, y: base.y, z: base.z + dz };
-      try {
-        const b = dimension.getBlock(loc);
-        if (b && b.typeId === "minecraft:fire") b.setType("minecraft:air");
-      } catch (err) {}
-    }
-  }
+  knockOutward(dimension, center, 6, 0.8, { lift: 0.2 });
+  sound(dimension, "bucket.empty_water", center);
+  scatter(dimension, "minecraft:basic_bubble_particle", center, { count: 14, radius: 3, height: 2 });
 }
 
+/**
+ * 津波TNT。波が外へ広がり、引き潮で戻る。
+ * 引き潮では「自分が置いた水」だけを消す。範囲内の水を無条件に消すと、
+ * 海辺や池のそばで使ったときに元からあった水まで消えてしまう。
+ */
 export function tsunamiEffect(dimension, center) {
   const placed = [];
-  const R = 5;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dz = -R; dz <= R; dz++) {
-      if (dx * dx + dz * dz > R * R || Math.random() > 0.3) continue;
-      const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y), z: Math.floor(center.z) + dz };
-      try {
-        const b = dimension.getBlock(loc);
-        if (b && b.typeId === "minecraft:air" && trySetBlock(dimension, loc, ["minecraft:water"])) {
-          placed.push(loc);
-        }
-      } catch (err) {}
-    }
+  if (mayBreakBlocks()) {
+    scanDisk(dimension, center, { radius: 5, layers: [0, 0], name: "tsunami" }, (dim, loc) => {
+      if (Math.random() > 0.3) return;
+      const block = blockAt(dim, loc);
+      if (!block || block.typeId !== "minecraft:air") return;
+      if (setBlock(dim, loc, "minecraft:water")) placed.push(loc);
+    });
   }
-  for (const ent of nearbyEntities(dimension, center, 8)) {
-    try {
-      const loc = ent.location;
-      const dx = loc.x - center.x;
-      const dz = loc.z - center.z;
-      const dist = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
-      ent.applyKnockback({ x: dx / dist, z: dz / dist }, 1.3);
-    } catch (err) {}
+  knockOutward(dimension, center, 8, 1.3, { lift: 0.25 });
+  sound(dimension, "ambient.weather.rain", center, { volume: 2 });
+  // 外へ広がる波頭
+  for (let s = 1; s <= 8; s++) {
+    later(s * 3, () => ring(dimension, "minecraft:basic_bubble_particle", center, s, { count: 8 + s * 3, y: 0.6 }));
   }
-  // 引き潮。自分が置いた水だけを消す。
-  // 以前は範囲内の水を無条件に消していたので、海辺や池の近くで使うと
-  // 元々そこにあった水まで一緒に消えてしまっていた。
-  system.runTimeout(() => {
+
+  later(100, () => {
     for (const loc of placed) {
-      try {
-        const b = dimension.getBlock(loc);
-        if (b && b.typeId === "minecraft:water") b.setType("minecraft:air");
-      } catch (err) {}
+      const block = blockAt(dimension, loc);
+      if (block && block.typeId === "minecraft:water") block.setType("minecraft:air");
     }
-  }, 100);
+  });
 }
+
+export function vacuumEffect(dimension, center) {
+  if (!mayBreakBlocks()) return;
+  scanSphere(dimension, center, { radius: 6, name: "vacuum" }, (dim, loc) => {
+    const block = blockAt(dim, loc);
+    if (!block) return;
+    const id = block.typeId;
+    if (id === "minecraft:water" || id === "minecraft:flowing_water" ||
+        id === "minecraft:lava" || id === "minecraft:flowing_lava") {
+      block.setType("minecraft:air");
+    }
+  });
+  sound(dimension, "random.fizz", center, { pitch: 0.6 });
+  scatter(dimension, "minecraft:basic_bubble_particle", center, { count: 20, radius: 6, height: 3 });
+}
+
+/* ------------------------------------------------------------------ */
+/*  雷と天候                                                           */
+/* ------------------------------------------------------------------ */
 
 export function thunderEffect(dimension, center) {
   for (let i = 0; i < 6; i++) {
-    system.runTimeout(() => {
-      try {
-        const x = center.x + (Math.random() - 0.5) * 10;
-        const z = center.z + (Math.random() - 0.5) * 10;
-        dimension.spawnEntity("minecraft:lightning_bolt", { x, y: center.y, z });
-      } catch (err) {}
-    }, i * 3);
+    later(i * 3, () => spawn(dimension, "minecraft:lightning_bolt", randomInDisk(center, 5)));
   }
 }
 
 export function stormEffect(dimension, center) {
-  // WeatherType は "Thunder" (先頭大文字) の列挙値。
-  // これまで "thunder" を渡していたため常に例外になり、
-  // 嵐TNTなのに天候が一度も変わっていなかった。
+  // 天候を変えるのは World ではなく Dimension のほう。
+  // 値も文字列ではなく WeatherType の列挙値でなければ例外になり、
+  // 嵐TNTなのに天候が一度も変わらないということになる。
+  let changed = false;
   try {
-    world.setWeather("Thunder", 6000);
+    dimension.setWeather(WeatherType.Thunder, 6000);
+    changed = true;
   } catch (err) {
+    changed = false;
+  }
+  if (!changed) {
     try {
       dimension.runCommand("weather thunder 300");
-    } catch (err2) {}
+    } catch (err) {}
   }
   for (let i = 0; i < 4; i++) {
-    system.runTimeout(() => {
-      try {
-        dimension.spawnEntity("minecraft:lightning_bolt", {
-          x: center.x + (Math.random() - 0.5) * 8,
-          y: center.y,
-          z: center.z + (Math.random() - 0.5) * 8,
-        });
-      } catch (err) {}
-    }, i * 4);
+    later(i * 4, () => spawn(dimension, "minecraft:lightning_bolt", randomInDisk(center, 4)));
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  毒と闇                                                             */
+/* ------------------------------------------------------------------ */
+
+/** 毒の霧。しばらく居座り、通りかかるたびに毒を重ねる */
+export function poisonEffect(dimension, center) {
+  repeat(5, 20, () => {
+    applyEffects(dimension, center, 6, [["minecraft:poison", 60, 1, true]]);
+    scatter(dimension, "minecraft:witchspell_emitter", center, { count: 6, radius: 5, height: 2 });
+  });
+  sound(dimension, "random.fizz", center);
 }
 
 export function darknessEffect(dimension, center) {
-  for (const ent of nearbyEntities(dimension, center, 7)) {
-    try {
-      ent.addEffect("minecraft:blindness", 100, { amplifier: 0, showParticles: false });
-      ent.addEffect("minecraft:nausea", 60, { amplifier: 1, showParticles: false });
-    } catch (err) {}
+  applyEffects(dimension, center, 7, [
+    ["minecraft:blindness", 100, 0],
+    ["minecraft:nausea", 60, 1],
+  ]);
+  // 光源を消して、本当に暗くする
+  if (mayBreakBlocks()) {
+    const LIGHTS = new Set([
+      "minecraft:torch", "minecraft:soul_torch", "minecraft:lantern", "minecraft:soul_lantern",
+      "minecraft:glowstone", "minecraft:sea_lantern", "minecraft:shroomlight", "minecraft:campfire",
+      "minecraft:soul_campfire", "minecraft:redstone_lamp", "minecraft:jack_o_lantern",
+    ]);
+    scanSphere(dimension, center, { radius: 6, name: "darkness" }, (dim, loc) => {
+      const block = blockAt(dim, loc);
+      if (block && LIGHTS.has(block.typeId)) block.setType("minecraft:air");
+    });
   }
-  for (let n = 0; n < 10; n++) {
-    try {
-      dimension.spawnParticle("minecraft:basic_smoke_particle", {
-        x: center.x + (Math.random() - 0.5) * 3,
-        y: center.y + Math.random() * 2,
-        z: center.z + (Math.random() - 0.5) * 3,
-      });
-    } catch (err) {}
-  }
-}
-
-export function glowEffect(dimension, center) {
-  const R = 5;
-  for (let i = 0; i < 8; i++) {
-    const loc = {
-      x: Math.floor(center.x) + Math.floor((Math.random() - 0.5) * R * 2),
-      y: Math.floor(center.y) + Math.floor((Math.random() - 0.5) * 4),
-      z: Math.floor(center.z) + Math.floor((Math.random() - 0.5) * R * 2),
-    };
-    try {
-      const b = dimension.getBlock(loc);
-      if (b && b.typeId === "minecraft:air") trySetBlock(dimension, loc, ["minecraft:glowstone"]);
-    } catch (err) {}
-  }
-}
-
-export function daynightEffect(dimension, center) {
-  try {
-    const t = world.getTimeOfDay();
-    world.setTimeOfDay(t < 13000 ? 13000 : 0);
-  } catch (err) {
-    try {
-      dimension.runCommand("time set night");
-    } catch (err2) {}
-  }
-  try {
-    dimension.playSound("random.orb", center);
-  } catch (err) {}
-}
-
-export function scorchedEffect(dimension, center) {
-  const R = 5;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dz = -R; dz <= R; dz++) {
-      if (dx * dx + dz * dz > R * R) continue;
-      const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) - 1, z: Math.floor(center.z) + dz };
-      try {
-        const b = dimension.getBlock(loc);
-        if (b && (b.typeId === "minecraft:grass_block" || b.typeId === "minecraft:dirt")) {
-          b.setType(Math.random() < 0.3 ? "minecraft:netherrack" : "minecraft:coarse_dirt");
-        }
-      } catch (err) {}
-    }
-  }
-}
-
-export const ORE_SMELT = {
-  "minecraft:iron_ore": "minecraft:iron_ingot",
-  "minecraft:deepslate_iron_ore": "minecraft:iron_ingot",
-  "minecraft:gold_ore": "minecraft:gold_ingot",
-  "minecraft:deepslate_gold_ore": "minecraft:gold_ingot",
-  "minecraft:copper_ore": "minecraft:copper_ingot",
-  "minecraft:deepslate_copper_ore": "minecraft:copper_ingot",
-  "minecraft:ancient_debris": "minecraft:netherite_scrap",
-  "minecraft:nether_gold_ore": "minecraft:gold_ingot",
-};
-
-/** その場で焼き固まるブロック (製錬レシピのうち、ブロックのまま残るもの) */
-export const SMELT_TO_BLOCK = {
-  "minecraft:sand": ["minecraft:glass"],
-  "minecraft:red_sand": ["minecraft:glass"],
-  "minecraft:cobblestone": ["minecraft:stone"],
-  "minecraft:cobbled_deepslate": ["minecraft:deepslate"],
-  "minecraft:clay": ["minecraft:terracotta", "minecraft:hardened_clay"],
-  "minecraft:wet_sponge": ["minecraft:sponge"],
-};
-
-export function smelterEffect(dimension, center) {
-  const R = 6;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dy = -R; dy <= R; dy++) {
-      for (let dz = -R; dz <= R; dz++) {
-        if (dx * dx + dy * dy + dz * dz > R * R) continue;
-        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
-        try {
-          const b = dimension.getBlock(loc);
-          if (!b) continue;
-          const drop = ORE_SMELT[b.typeId];
-          if (drop) {
-            b.setType("minecraft:air");
-            dimension.spawnItem(new ItemStack(drop, 1), loc);
-            continue;
-          }
-          const baked = SMELT_TO_BLOCK[b.typeId];
-          if (baked) trySetBlock(dimension, loc, baked);
-        } catch (err) {}
-      }
-    }
-  }
-}
-
-/**
- * 黒曜石TNT。溶岩を黒曜石に変えるだけだったので、溶岩の無い場所で使うと
- * 威力0と相まって本当に何も起きなかった。そこで、爆心地を包む黒曜石の殻も
- * 張るようにした。空いている場所だけを埋めるので、既存の建築は壊さない。
- */
-export function obsidianEffect(dimension, center) {
-  const base = { x: Math.floor(center.x), y: Math.floor(center.y), z: Math.floor(center.z) };
-
-  // 1) 周囲の溶岩を黒曜石に変える
-  const R = 5;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dz = -R; dz <= R; dz++) {
-        if (dx * dx + dy * dy + dz * dz > R * R) continue;
-        try {
-          const b = dimension.getBlock({ x: base.x + dx, y: base.y + dy, z: base.z + dz });
-          if (b && (b.typeId === "minecraft:lava" || b.typeId === "minecraft:flowing_lava")) {
-            b.setType("minecraft:obsidian");
-          }
-        } catch (err) {}
-      }
-    }
-  }
-
-  // 2) 爆心地を黒曜石のドームで包む (球の殻の部分だけを、空いている場所に置く)
-  const SR = 4;
-  for (let dx = -SR; dx <= SR; dx++) {
-    for (let dy = -SR; dy <= SR; dy++) {
-      for (let dz = -SR; dz <= SR; dz++) {
-        const d2 = dx * dx + dy * dy + dz * dz;
-        if (d2 > SR * SR || d2 < (SR - 1) * (SR - 1)) continue;
-        const loc = { x: base.x + dx, y: base.y + dy, z: base.z + dz };
-        try {
-          const b = dimension.getBlock(loc);
-          if (b && (b.typeId === "minecraft:air" || b.typeId === "minecraft:water" ||
-                    b.typeId === "minecraft:flowing_water")) {
-            b.setType("minecraft:obsidian");
-          }
-        } catch (err) {}
-      }
-    }
-  }
-  try {
-    dimension.playSound("random.anvil_land", center);
-  } catch (err) {}
-}
-
-export function vacuumEffect(dimension, center) {
-  const R = 6;
-  for (let dx = -R; dx <= R; dx++) {
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dz = -R; dz <= R; dz++) {
-        if (dx * dx + dy * dy + dz * dz > R * R) continue;
-        const loc = { x: Math.floor(center.x) + dx, y: Math.floor(center.y) + dy, z: Math.floor(center.z) + dz };
-        try {
-          const b = dimension.getBlock(loc);
-          if (b && (b.typeId === "minecraft:water" || b.typeId === "minecraft:lava" ||
-                    b.typeId === "minecraft:flowing_water" || b.typeId === "minecraft:flowing_lava")) {
-            b.setType("minecraft:air");
-          }
-        } catch (err) {}
-      }
-    }
-  }
+  burst(dimension, "minecraft:basic_smoke_particle", center, { count: 18, radius: 3 });
+  sound(dimension, "mob.wither.spawn", center, { volume: 0.6, pitch: 0.5 });
 }

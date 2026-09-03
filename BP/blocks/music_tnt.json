@@ -5,7 +5,7 @@
       "identifier": "manytnt:music_tnt",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:spectacle_group"
       }
     },
     "components": {

@@ -5,12 +5,13 @@
       "identifier": "manytnt:detonator",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:tnt_group"
+        "group": "manytnt:basic_group"
       }
     },
     "components": {
       "minecraft:icon": "manytnt_detonator",
-      "minecraft:max_stack_size": 1
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true
     }
   }
 }

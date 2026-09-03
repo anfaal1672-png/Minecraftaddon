@@ -1,0 +1,112 @@
+/**
+ * 移動カテゴリのTNT。
+ *
+ * 引き寄せ・打ち上げ・転移など、動かすTNT。
+ *
+ * 書式は data/schema.mjs を参照。カテゴリはこのファイルに入っていること自体で決まる。
+ */
+export default [
+  {
+    id: "gravity_tnt",
+    name: { ja: "重力TNT", en: "Gravity TNT" },
+    desc: { ja: "導火線の間に周囲を引き寄せ、最後に押し潰す。", en: "Drags everything inward while burning, then slams it down." },
+    blast: { power: 3, breaks: false, fire: false },
+    visual: { color: "#3c4c72", emblem: "arrow_down", trail: "minecraft:endrod" },
+    effect: "gravityEffect",
+    traits: { gravityPull: true },
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:obsidian", "minecraft:obsidian"] },
+  },
+  {
+    id: "teleport_tnt",
+    name: { ja: "テレポートTNT", en: "Teleport TNT" },
+    desc: { ja: "巻き込まれたものをばらばらの場所へ飛ばす。", en: "Scatters everything caught in it to random places." },
+    blast: { power: 4, breaks: true, fire: false },
+    visual: { color: "#5c3c8c", emblem: "portal", trail: "minecraft:endrod" },
+    effect: "teleportEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:ender_pearl"] },
+  },
+  {
+    id: "magnet_tnt",
+    name: { ja: "磁力TNT", en: "Magnet TNT" },
+    desc: { ja: "導火線の間にアイテムを吸い寄せ、最後にばらまく。", en: "Vacuums up items while burning, then flings them out." },
+    blast: { power: 2, breaks: true, fire: false },
+    visual: { color: "#b02222", emblem: "magnet", trail: "minecraft:villager_happy" },
+    effect: "magnetBurstEffect",
+    traits: { magnetPull: true },
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:iron_ingot", "minecraft:iron_ingot"] },
+  },
+  {
+    id: "antigravity_tnt",
+    name: { ja: "反重力TNT", en: "Anti-Gravity TNT" },
+    desc: { ja: "範囲内のすべてを高々と打ち上げる。", en: "Launches everything in range high into the air." },
+    blast: { power: 3, breaks: false, fire: false },
+    visual: { color: "#8c7ce2", emblem: "arrow_up", trail: "minecraft:endrod" },
+    effect: "antiGravityEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:phantom_membrane"] },
+  },
+  {
+    id: "bouncy_tnt",
+    name: { ja: "バウンドTNT", en: "Bouncy TNT" },
+    desc: { ja: "すべてを高く跳ね上げ、落下ダメージを消す。", en: "Bounces everything skyward and cancels fall damage." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#8cd22a", emblem: "bounce" },
+    effect: "bouncyEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:slime_ball"] },
+  },
+  {
+    id: "swap_tnt",
+    name: { ja: "入れ替えTNT", en: "Swap TNT" },
+    desc: { ja: "範囲内のエンティティの位置を入れ替える。", en: "Swaps the positions of the entities in range." },
+    blast: { power: 3, breaks: true, fire: false },
+    visual: { color: "#2ab2b2", emblem: "swap", trail: "minecraft:endrod" },
+    effect: "swapEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:ender_eye"] },
+  },
+  {
+    id: "blackhole_tnt",
+    name: { ja: "ブラックホールTNT", en: "Black Hole TNT" },
+    desc: { ja: "すべてを一点に吸い込み、そこにあった物を消す。", en: "Sucks everything into a point and erases what was there." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: {
+      color: "#1a1a22", band: "#101016", ink: "#a898d8", emblem: "void", trail: "minecraft:basic_smoke_particle",
+    },
+    effect: "blackholeEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:crying_obsidian", "minecraft:crying_obsidian"] },
+  },
+  {
+    id: "enderman_tnt",
+    name: { ja: "エンダーマンTNT", en: "Enderman TNT" },
+    desc: { ja: "エンダーマンを呼び、周りのブロックを盗ませる。", en: "Calls endermen that steal the blocks around them." },
+    blast: { power: 2, breaks: false, fire: false },
+    visual: { color: "#24223c", band: "#1a1830", emblem: "eye", trail: "minecraft:endrod" },
+    effect: "endermanEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:ender_pearl", "minecraft:ender_pearl"] },
+  },
+  {
+    id: "beam_tnt",
+    name: { ja: "ビームTNT", en: "Beam TNT" },
+    desc: { ja: "上空へ貫くビームを撃ち、触れたものを焼く。", en: "Fires a piercing beam skyward that burns what it touches." },
+    blast: { power: 3, breaks: true, fire: false },
+    visual: { color: "#4ae2e2", emblem: "beam", trail: "minecraft:endrod" },
+    effect: "beamEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:nether_star"] },
+  },
+  {
+    id: "speed_tnt",
+    name: { ja: "スピードTNT", en: "Speed TNT" },
+    desc: { ja: "移動速度と跳躍力を大幅に引き上げる。", en: "Massively boosts movement speed and jump height." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#4ab2ea", emblem: "speed", trail: "minecraft:basic_crit_particle" },
+    effect: "speedEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:sugar", "minecraft:sugar"] },
+  },
+  {
+    id: "chorus_tnt",
+    name: { ja: "エンドTNT", en: "Chorus TNT" },
+    desc: { ja: "エンドの島とコーラスの木を生やす。", en: "Grows an End island with chorus trees." },
+    blast: { power: 2, breaks: false, fire: false },
+    visual: { color: "#8c5aaa", emblem: "island", trail: "minecraft:endrod" },
+    effect: "chorusEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:chorus_fruit", "minecraft:popped_chorus_fruit"] },
+  },
+];
