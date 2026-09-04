@@ -208,11 +208,13 @@ Node.js 22 以降が必要です。
    Minecraft は黙って何も鳴らさない・何も出さないので、目で見て気づくのは困難です。
    この検査で「導火線の軌跡・毒の霧・水泡のパーティクルが3種類とも存在しない名前で、
    一度も表示されていなかった」ことが分かりました。
-4. **コンポーネント名の実在検査** (`tools/check-schema.mjs`)
+4. **コンポーネント名と Molang の実在検査** (`tools/check-schema.mjs` / `check-assets.mjs`)
    Mojang が公開している正式な JSON スキーマ (`metadata/json_schemas`) と
    突き合わせ、ブロックとアイテムに書いたコンポーネントが、宣言した
    `format_version` に本当にあるかを調べます。統合版は知らないコンポーネントを
    黙って無視するので、「書いたのに効いていない」ことに気づけません。
+   見た目を動かす Molang の `query.xxx` も同じく実在するかを調べます
+   (綴りを間違えると静かに 0 が返るだけです)。
 5. **回帰テスト** (`tools/test/`)
    `@minecraft/server` を代役に差し替えて、着火から爆発、地形の書き換えまでを
    実際に流します。116種類の効果すべてを一度は動かし、
@@ -340,6 +342,30 @@ Node.js 22 以降が必要です。
 (`lib/entities.js` の `entitiesNear` が既定で除外します)。
 本家のTNTは他の爆発に巻き込まれても吹き飛ぶだけで壊れないので、
 押し出しだけはこれまで通り効きます。
+
+**白い明滅も Mojang 自身が書いた式をそのまま使っています。**
+本家の起爆中TNTのレンダリングはエンジン側にあって定義ファイルがありませんが、
+同じ点滅をする `minecraft:sulfur_cube` はデータ化されていて、そこに実装があります
+(`resource_pack/entity/sulfur_cube.entity.json`)。
+
+```
+variable.is_primed = query.fuse_time >= 0;
+variable.is_flashing = variable.is_primed && math.mod(math.floor(query.fuse_time / 5), 2) == 0;
+```
+
+```json
+"overlay_color": {
+  "r": "variable.is_flashing ? 1.0 : this",
+  "g": "variable.is_flashing ? 1.0 : this",
+  "b": "variable.is_flashing ? 1.0 : this",
+  "a": "variable.is_flashing ? 0.5 : this"
+}
+```
+
+以前は自前で近い式を書いていましたが、**経過時間 (`query.life_time`) で駆動していて
+点滅が本家の2.5倍速く**、位相も合っていませんでした。本家は「導火線の残り時間」を
+5tick ごとに切り替えます。光っていない間を `this` にしておくのも大事で、
+`0` を書き込むと本来エンジンが入れている値まで潰してしまいます。
 
 さらに保険として、**起爆中のTNTが爆発せずに消えた場合は、
 最後に見えていた場所で必ず爆発させます** (`core/fuse.js` の `rescue`)。

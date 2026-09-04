@@ -131,6 +131,12 @@
       "geometry": {
         "default": "geometry.manytnt_primed_tnt"
       },
+      "scripts": {
+        "pre_animation": [
+          "variable.is_primed = query.fuse_time >= 0;",
+          "variable.is_flashing = variable.is_primed && math.mod(math.floor(query.fuse_time / 5), 2) == 0;"
+        ]
+      },
       "render_controllers": [
         "controller.render.manytnt_primed_tnt"
       ]

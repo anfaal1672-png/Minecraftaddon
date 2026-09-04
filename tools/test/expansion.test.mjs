@@ -469,3 +469,33 @@ suite("ディスペンサー", () => {
     }
   });
 });
+
+suite("見た目をバニラに合わせる", () => {
+  test("明滅の式が Mojang のものと一致している", () => {
+    // bedrock-samples の resource_pack/entity/sulfur_cube.entity.json にある
+    // 本家の実装をそのまま使っている。自前で近い式を書くと速さも位相もずれる。
+    const scripts = readJson("RP/entity/primed_tnt.entity.json")["minecraft:client_entity"]
+      .description.scripts;
+    expect.deepEqual(scripts.pre_animation, [
+      "variable.is_primed = query.fuse_time >= 0;",
+      "variable.is_flashing = variable.is_primed && math.mod(math.floor(query.fuse_time / 5), 2) == 0;",
+    ]);
+  });
+
+  test("明滅は経過時間ではなく導火線の残りで動く", () => {
+    const text = JSON.stringify(readJson("RP/entity/primed_tnt.entity.json"));
+    expect.includes(text, "query.fuse_time");
+    expect.ok(!text.includes("query.life_time"), "経過時間で動かしている");
+  });
+
+  test("光っていない間は元の色を壊さない", () => {
+    const rc = readJson("RP/render_controllers/primed_tnt.render_controllers.json")
+      .render_controllers["controller.render.manytnt_primed_tnt"];
+    expect.deepEqual(rc.overlay_color, {
+      r: "variable.is_flashing ? 1.0 : this",
+      g: "variable.is_flashing ? 1.0 : this",
+      b: "variable.is_flashing ? 1.0 : this",
+      a: "variable.is_flashing ? 0.5 : this",
+    });
+  });
+});

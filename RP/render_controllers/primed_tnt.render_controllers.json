@@ -138,10 +138,10 @@
         "array.skins[query.property('manytnt:kind')]"
       ],
       "overlay_color": {
-        "r": 1,
-        "g": 1,
-        "b": 1,
-        "a": "math.mod(math.floor(query.life_time * 10.0), 2.0) * 0.55"
+        "r": "variable.is_flashing ? 1.0 : this",
+        "g": "variable.is_flashing ? 1.0 : this",
+        "b": "variable.is_flashing ? 1.0 : this",
+        "a": "variable.is_flashing ? 0.5 : this"
       }
     }
   }

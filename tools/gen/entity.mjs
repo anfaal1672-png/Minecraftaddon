@@ -102,6 +102,20 @@ export function behaviorEntity() {
   };
 }
 
+/**
+ * 導火線が燃えている間の白い明滅。
+ *
+ * この式は Mojang 自身が書いたものをそのまま使っている
+ * (bedrock-samples の resource_pack/entity/sulfur_cube.entity.json)。
+ * 本家のTNTの点滅は 5tick ごとに切り替わり、経過時間ではなく
+ * 「導火線の残り時間 (query.fuse_time)」で駆動している。
+ * 自前で近い式を書くと点滅の速さも位相も本家とずれる。
+ */
+export const FLASH_SCRIPT = [
+  "variable.is_primed = query.fuse_time >= 0;",
+  "variable.is_flashing = variable.is_primed && math.mod(math.floor(query.fuse_time / 5), 2) == 0;",
+];
+
 export function clientEntity() {
   return {
     format_version: "1.10.0",
@@ -111,6 +125,7 @@ export function clientEntity() {
         materials: { default: "entity_alphatest" },
         textures: Object.fromEntries(TNT_IDS.map((id) => [id, `textures/entity/tnt/${id}`])),
         geometry: { default: `geometry.${NS}_primed_tnt` },
+        scripts: { pre_animation: FLASH_SCRIPT },
         render_controllers: [`controller.render.${NS}_primed_tnt`],
       },
     },
@@ -126,12 +141,14 @@ export function renderController() {
         geometry: "Geometry.default",
         materials: [{ "*": "Material.default" }],
         textures: [`array.skins[query.property('${NS}:kind')]`],
-        // バニラのTNTと同じく、導火線が燃えている間は白く明滅させる
+        // 明滅のさせ方も Mojang のものをそのまま使う。
+        // 光っていない間を "this" にしておくのが大事で、0 を書き込むと
+        // 本来エンジンが入れている値まで潰してしまう。
         overlay_color: {
-          r: 1.0,
-          g: 1.0,
-          b: 1.0,
-          a: "math.mod(math.floor(query.life_time * 10.0), 2.0) * 0.55",
+          r: "variable.is_flashing ? 1.0 : this",
+          g: "variable.is_flashing ? 1.0 : this",
+          b: "variable.is_flashing ? 1.0 : this",
+          a: "variable.is_flashing ? 0.5 : this",
         },
       },
     },
