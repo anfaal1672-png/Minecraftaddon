@@ -12,6 +12,7 @@
 import { system } from "@minecraft/server";
 import { attempt, note } from "./log.js";
 import { KIND_PROPERTY, NS, PRIMED_TNT, TAG_PREFIX } from "./registry.js";
+import { detonate, wasDetonated } from "./detonation.js";
 import { get } from "./settings.js";
 import { particle, shake, sound } from "../lib/fx.js";
 import { pullInward, pullItems } from "../lib/entities.js";
@@ -23,8 +24,14 @@ const PATROL_INTERVAL = 2;
 /** 保険。この時間を超えたものは追跡から外す (導火線より必ず長くする) */
 const MAX_TRACK_TICKS = 400;
 
-/** 連鎖着火のときの導火線 (tick)。バニラと同じく 0.5〜2秒 */
-export const SHORT_FUSE_EVENT = `${NS}:short_fuse`;
+/** 導火線を過ぎてもこれだけ待ってから「詰まっている」と判断する (tick) */
+const STUCK_MARGIN = 100;
+
+/**
+ * 連鎖着火のときの導火線 (0.5〜2秒)。
+ * イベント名もバニラの minecraft:tnt と同じ from_explosion にしてある。
+ */
+export const CHAIN_FUSE_EVENT = "from_explosion";
 
 /** 追跡中の起爆中TNT */
 const active = [];
@@ -45,7 +52,7 @@ export function spawnPrimed(dimension, center, cfg, { chained = false } = {}) {
 
   // 導火線の長さは種類ごとに違う。エンティティ側に用意してある
   // component_group を呼び分けることで切り替える。
-  const fuseEvent = chained ? SHORT_FUSE_EVENT : `${NS}:fuse_${cfg.fuse}`;
+  const fuseEvent = chained ? CHAIN_FUSE_EVENT : `${NS}:fuse_${cfg.fuse}`;
   attempt("fuse:event", () => entity.triggerEvent(fuseEvent));
 
   if (cfg.launchUp) {
@@ -70,6 +77,9 @@ function track(dimension, entity, cfg, fuseTicks) {
     dimension,
     entity,
     cfg,
+    // 消えたときにどこで爆発させるか。毎回の巡回で更新する
+    lastLocation: attempt("fuse:firstLoc", () => ({ ...entity.location }), null),
+    entityId: attempt("fuse:id", () => entity.id, null),
     elapsed: 0,
     fuseTicks: Math.min(MAX_TRACK_TICKS, fuseTicks),
     warned: false,
@@ -91,11 +101,18 @@ export function registerFuseLoop() {
         try {
           loc = item.entity.location;
         } catch (err) {
-          active.splice(i, 1); // 既に爆発した、または消えた
+          // 姿が消えた。爆発したのなら何もしなくてよいが、
+          // そうでないなら「着火したのに何も起きない」ことになるので、
+          // 最後に見えていた場所で必ず爆発させる。
+          active.splice(i, 1);
+          rescue(item);
           continue;
         }
-        if (item.elapsed > item.fuseTicks + 40) {
+        item.lastLocation = { x: loc.x, y: loc.y, z: loc.z };
+        // 導火線をとうに過ぎても爆発していないなら、何かが詰まっている
+        if (item.elapsed > item.fuseTicks + STUCK_MARGIN) {
           active.splice(i, 1);
+          rescue(item);
           continue;
         }
 
@@ -139,6 +156,33 @@ function patrol(item, loc) {
   if (!item.warned && remain <= 20) {
     item.warned = true;
     shake(dimension, loc, { radius: 24, intensity: 0.25, seconds: 1 });
+  }
+}
+
+/**
+ * 消えてしまった起爆中TNTの後始末。
+ *
+ * 本来ここは通らない。通るのは、起爆中のTNTが爆発する前に
+ * 何らかの理由で世界から消えた場合だけ。放っておくと
+ * 「火を点けたのにTNTが消えただけで何も起きない」という
+ * いちばん分かりにくい壊れ方になるので、最後に見えていた場所で
+ * 必ず爆発させる。
+ */
+function rescue(item) {
+  if (item.entityId !== null && wasDetonated(item.entityId)) return; // 正常に爆発した
+  if (!item.lastLocation) return;
+
+  // チャンクが読み込まれていないだけなら、TNTは消えたのではなく
+  // 一緒に眠っているだけ。戻ってきたときに本人が爆発するので手を出さない。
+  const loaded = attempt("fuse:chunk", () => item.dimension.isChunkLoaded(item.lastLocation), true);
+  if (loaded === false) return;
+
+  // 着火した直後に消えた場合も含めて拾う
+  note("fuse:rescue", `${item.cfg.id} が爆発せずに消えたので、代わりに爆発させる`);
+  try {
+    detonate(item.dimension, item.lastLocation, item.cfg);
+  } catch (err) {
+    note("fuse:rescueFailed", err);
   }
 }
 

@@ -11,6 +11,7 @@ import { attempt } from "./log.js";
 import { actionBar } from "./chat.js";
 import { CATEGORIES, ALL_CONFIGS, configsInCategory, TNT_COUNT } from "./registry.js";
 import { SETTINGS, get, set } from "./settings.js";
+import { GEAR_BLOCKS, THROWABLES, TOOLS } from "../data/gear-table.js";
 import { distinctUsed, getStats, topUsed } from "./stats.js";
 
 /**
@@ -47,18 +48,54 @@ function waitTicks(ticks) {
 /* ------------------------------------------------------------------ */
 
 export async function openMainMenu(player) {
+  const gearCount = THROWABLES.length + TOOLS.length + GEAR_BLOCKS.length;
   const form = new ActionFormData()
     .title("§lいろんなTNT§r")
-    .body(`全 §e${TNT_COUNT}§r 種類。カテゴリから選ぶと、威力・効果・レシピが見られます。`)
-    .button("§l図鑑§r\n§7種類を調べる", "textures/items/gunpowder")
+    .body(`TNT §e${TNT_COUNT}§r 種類と、道具 §e${gearCount}§r 種類。\nカテゴリから選ぶと、威力・効果・レシピが見られます。`)
+    .button("§l図鑑§r\n§7TNTを調べる", "textures/items/gunpowder")
+    .button("§l道具§r\n§7投げる爆弾・道具・仕掛け", "textures/items/flint_and_steel")
     .button("§l記録§r\n§7爆発の統計と実績", "textures/items/book_normal")
     .button("§l設定§r\n§7動きを調整する", "textures/items/redstone_dust");
 
   const response = await show(form, player);
   if (!response) return;
   if (response.selection === 0) return openCatalog(player);
-  if (response.selection === 1) return openStats(player);
-  if (response.selection === 2) return openSettings(player);
+  if (response.selection === 1) return openGear(player);
+  if (response.selection === 2) return openStats(player);
+  if (response.selection === 3) return openSettings(player);
+}
+
+/* ------------------------------------------------------------------ */
+/*  道具                                                               */
+/* ------------------------------------------------------------------ */
+
+/** 図鑑に出す順番と見出し */
+const GEAR_SECTIONS = [
+  { title: "§6投げる爆弾§r", note: "§7置く余裕が無いときに§r", items: THROWABLES },
+  { title: "§b道具§r", note: "§7持って使う§r", items: TOOLS },
+  { title: "§e仕掛けブロック§r", note: "§7置いて使う§r", items: GEAR_BLOCKS },
+];
+
+export async function openGear(player) {
+  const lines = [];
+  for (const section of GEAR_SECTIONS) {
+    lines.push(`§l${section.title}§r ${section.note}`);
+    for (const item of section.items) {
+      lines.push(`  §f${item.name.ja}§r`);
+      lines.push(`    §7${item.desc.ja}§r`);
+    }
+    lines.push("");
+  }
+  lines.push("§8作り方はクリエイティブの「TNTの道具」タブか、レシピ本から§r");
+
+  const form = new ActionFormData()
+    .title("§l道具§r")
+    .body(lines.join("\n"))
+    .button("§7◀ もどる§r")
+    .button("閉じる");
+
+  const response = await show(form, player);
+  if (response && response.selection === 0) return openMainMenu(player);
 }
 
 /* ------------------------------------------------------------------ */

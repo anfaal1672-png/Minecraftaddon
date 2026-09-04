@@ -13,9 +13,10 @@
 import fs from "node:fs";
 import { TNT_DEFS, checkDefs, fuseLengths } from "../data/index.mjs";
 import { CATEGORIES } from "../data/categories.mjs";
+import { GEAR_BLOCKS, GEAR_ITEMS, THROWABLES } from "../data/gear.mjs";
 import { EMBLEMS } from "./lib/emblems.mjs";
 import { at, exists, readJson, readText, resetStats, setDryRun, staleFiles } from "./lib/io.mjs";
-import { generateAssets, TOOLS } from "./gen/assets.mjs";
+import { generateAssets } from "./gen/assets.mjs";
 import { generateEntity } from "./gen/entity.mjs";
 import { findEffectFunctions, generateScripts } from "./gen/scripts.mjs";
 import { checkApiUsage } from "./check-api.mjs";
@@ -100,13 +101,48 @@ for (const locale of ["ja_JP", "en_US"]) {
   for (const def of TNT_DEFS) {
     if (!bp.includes(`tile.manytnt:${def.id}.name=`)) fail(`${locale}: ${def.id} の表示名が無い`);
   }
-  for (const tool of TOOLS) {
-    if (!bp.includes(`item.manytnt:${tool.id}=`)) fail(`${locale}: ${tool.id} の表示名が無い`);
+  for (const gear of GEAR_ITEMS) {
+    if (!bp.includes(`item.manytnt:${gear.id}=`)) fail(`${locale}: ${gear.id} の表示名が無い`);
+  }
+  for (const block of GEAR_BLOCKS) {
+    if (!bp.includes(`tile.manytnt:${block.id}.name=`)) fail(`${locale}: ${block.id} の表示名が無い`);
   }
   for (const category of CATEGORIES) {
     if (!bp.includes(`itemGroup.name.manytnt:${category.id}_group=`)) {
       fail(`${locale}: ${category.id} のグループ名が無い`);
     }
+  }
+}
+
+/* TNT以外の追加物 */
+for (const gear of GEAR_ITEMS) {
+  for (const rel of [`BP/items/${gear.id}.json`, `BP/recipes/${gear.id}.json`, `RP/textures/items/${gear.id}.png`]) {
+    if (!exists(rel)) fail(`足りないファイル: ${rel}`);
+  }
+}
+for (const bomb of THROWABLES) {
+  for (const rel of [
+    `BP/entities/${bomb.id}_projectile.json`,
+    `RP/entity/${bomb.id}_projectile.entity.json`,
+  ]) {
+    if (!exists(rel)) fail(`足りないファイル: ${rel}`);
+  }
+  // 投げるアイテムと投擲物の名前が食い違うと、投げても何も飛ばない
+  const item = readJson(`BP/items/${bomb.id}.json`)["minecraft:item"];
+  const target = item.components["minecraft:projectile"]?.projectile_entity;
+  const entity = readJson(`BP/entities/${bomb.id}_projectile.json`)["minecraft:entity"];
+  if (target !== entity.description.identifier) {
+    fail(`${bomb.id}: 投げる先 ${target} と投擲物 ${entity.description.identifier} が食い違っている`);
+  }
+}
+for (const block of GEAR_BLOCKS) {
+  for (const rel of [
+    `BP/blocks/${block.id}.json`,
+    `BP/loot_tables/blocks/${block.id}.json`,
+    `RP/textures/blocks/${block.id}_side.png`,
+    `RP/textures/blocks/${block.id}_top.png`,
+  ]) {
+    if (!exists(rel)) fail(`足りないファイル: ${rel}`);
   }
 }
 

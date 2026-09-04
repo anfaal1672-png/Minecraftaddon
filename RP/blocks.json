@@ -359,5 +359,14 @@
   },
   "manytnt:replicator_tnt": {
     "sound": "grass"
+  },
+  "manytnt:detonator_block": {
+    "sound": "metal"
+  },
+  "manytnt:fuse_block": {
+    "sound": "grass"
+  },
+  "manytnt:blast_proof_block": {
+    "sound": "metal"
   }
 }

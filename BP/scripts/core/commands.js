@@ -11,14 +11,15 @@
  *   /scriptevent manytnt:set <項目> <値>  設定を変える
  *   /scriptevent manytnt:debug   握り潰した例外とジョブの状態を出す
  */
-import { system, world } from "@minecraft/server";
+import { system } from "@minecraft/server";
 import { attempt, failureReport } from "./log.js";
 import { announce, tell } from "./chat.js";
 import { jobStats } from "./jobs.js";
 import { openMainMenu } from "./menu.js";
 import { activeCount } from "./fuse.js";
-import { CATALOG_ITEM, CATEGORIES, TNT_COUNT, configsInCategory } from "./registry.js";
+import { CATEGORIES, TNT_COUNT, configsInCategory } from "./registry.js";
 import { SETTINGS, get, reset, set, toggle } from "./settings.js";
+import { GEAR_BLOCKS, THROWABLES, TOOLS } from "../data/gear-table.js";
 import { distinctUsed, flushStats, getStats, topUsed } from "./stats.js";
 
 const HANDLERS = {
@@ -38,6 +39,9 @@ const HANDLERS = {
       const names = configsInCategory(category.id).map((c) => c.name.ja).join("、");
       say(`${category.icon} §l${category.name.ja}§r: §7${names}§r`);
     }
+    say(`§6投げる爆弾:§r §7${THROWABLES.map((g) => g.name.ja).join("、")}§r`);
+    say(`§b道具:§r §7${TOOLS.map((g) => g.name.ja).join("、")}§r`);
+    say(`§e仕掛けブロック:§r §7${GEAR_BLOCKS.map((g) => g.name.ja).join("、")}§r`);
     say("§7着火: 火打石 / 炎・溶岩 / レッドストーン / 燃えている矢 / 他の爆発§r");
     say("§7画面で見る: /scriptevent manytnt:menu§r");
   },
@@ -101,18 +105,6 @@ export function registerCommands() {
       const handler = HANDLERS[event.id];
       if (!handler) return;
       attempt(`command:${event.id}`, () => handler(event));
-    })
-  );
-}
-
-/** 図鑑アイテムを持って使うと画面が開く */
-export function registerCatalogItem() {
-  attempt("commands:catalogItem", () =>
-    world.afterEvents.itemUse.subscribe((event) => {
-      if (event.itemStack?.typeId !== CATALOG_ITEM) return;
-      const player = event.source;
-      if (!player) return;
-      attempt("command:catalog", () => openMainMenu(player));
     })
   );
 }

@@ -39,7 +39,9 @@ suite("定義と表", () => {
       expect.ok(entity.component_groups[`manytnt:fuse_${ticks}`], `fuse_${ticks} が無い`);
       expect.ok(entity.events[`manytnt:fuse_${ticks}`], `fuse_${ticks} のイベントが無い`);
     }
-    expect.ok(entity.component_groups["manytnt:short_fuse"], "連鎖用の短い導火線が無い");
+    // 連鎖用の短い導火線。名前もバニラの minecraft:tnt と同じにしてある
+    expect.ok(entity.component_groups.from_explosion, "連鎖用の短い導火線が無い");
+    expect.ok(entity.events.from_explosion, "連鎖用のイベントが無い");
   });
 
   test("カテゴリに漏れが無い", () => {

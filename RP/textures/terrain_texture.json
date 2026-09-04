@@ -726,6 +726,24 @@
     },
     "manytnt:replicator_tnt_side": {
       "textures": "textures/blocks/replicator_tnt_side"
+    },
+    "manytnt:detonator_block_top": {
+      "textures": "textures/blocks/detonator_block_top"
+    },
+    "manytnt:detonator_block_side": {
+      "textures": "textures/blocks/detonator_block_side"
+    },
+    "manytnt:fuse_block_top": {
+      "textures": "textures/blocks/fuse_block_top"
+    },
+    "manytnt:fuse_block_side": {
+      "textures": "textures/blocks/fuse_block_side"
+    },
+    "manytnt:blast_proof_block_top": {
+      "textures": "textures/blocks/blast_proof_block_top"
+    },
+    "manytnt:blast_proof_block_side": {
+      "textures": "textures/blocks/blast_proof_block_side"
     }
   }
 }

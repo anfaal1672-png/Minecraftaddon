@@ -5,7 +5,7 @@
       "identifier": "manytnt:detonator",
       "menu_category": {
         "category": "items",
-        "group": "manytnt:basic_group"
+        "group": "manytnt:gear_group"
       }
     },
     "components": {

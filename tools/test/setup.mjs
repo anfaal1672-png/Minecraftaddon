@@ -9,14 +9,18 @@ import { clearResponses, clearShown } from "./mock/server-ui.mjs";
 
 import "../../BP/scripts/main.js";
 import { cancelAll } from "../../BP/scripts/core/jobs.js";
-import { clearReservations } from "../../BP/scripts/core/ignition.js";
-import { clearActive } from "../../BP/scripts/core/fuse.js";
-import { resetChainCount } from "../../BP/scripts/core/chain.js";
+import { clearMines, clearReservations } from "../../BP/scripts/core/ignition.js";
+import { clearActive, registerFuseLoop } from "../../BP/scripts/core/fuse.js";
+import { registerChainCapReset, resetChainCount } from "../../BP/scripts/core/chain.js";
 import { resetStats } from "../../BP/scripts/core/stats.js";
 import { resetDedupe } from "../../BP/scripts/core/chat.js";
 import { load as loadSettings, reset as resetSettings } from "../../BP/scripts/core/settings.js";
 import { resetReplication } from "../../BP/scripts/effects/chaos.js";
+import { clearThrowableMemory } from "../../BP/scripts/gear/throwables.js";
+import { clearTimers } from "../../BP/scripts/gear/tools.js";
+import { clearFuses } from "../../BP/scripts/gear/blocks.js";
 import { clearFailures, failureReport } from "../../BP/scripts/core/log.js";
+import { clearDetonated } from "../../BP/scripts/core/detonation.js";
 import { PRIMED_TNT, TAG_PREFIX, tntConfig } from "../../BP/scripts/core/registry.js";
 
 // ブロックのカスタムコンポーネントは startup で登録される。
@@ -30,13 +34,26 @@ system.beforeEvents.startup.emit({
   },
 });
 
-/** 世界と、アドオンが抱えている状態をまとめて初期化する */
+/**
+ * 世界と、アドオンが抱えている状態をまとめて初期化する。
+ *
+ * resetMock() はタイマーも全部消すので、起動時に1回だけ登録される
+ * 巡回 (導火線の追跡・連鎖の数え直し) もそこで止まってしまう。
+ * テストごとに登録し直して、実際のワールドと同じ状態にする。
+ */
 export function freshWorld() {
   cancelAll();
   resetMock();
+  registerFuseLoop();
+  registerChainCapReset();
   clearReservations();
+  clearMines();
+  clearDetonated();
   clearActive();
   resetChainCount();
+  clearThrowableMemory();
+  clearTimers();
+  clearFuses();
   resetDedupe();
   resetReplication();
   clearResponses();

@@ -1,0 +1,17 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:item": {
+    "description": {
+      "identifier": "manytnt:timer_tool",
+      "menu_category": {
+        "category": "items",
+        "group": "manytnt:gear_group"
+      }
+    },
+    "components": {
+      "minecraft:icon": "manytnt_timer_tool",
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true
+    }
+  }
+}

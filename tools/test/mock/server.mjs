@@ -187,7 +187,7 @@ class Entity {
     this.id = `e${++entitySeq}`;
     this.dimension = dimension;
     this.typeId = typeId;
-    this.location = { ...location };
+    this._location = { ...location };
     this.tags = new Set();
     this.properties = new Map();
     this.events = [];
@@ -200,6 +200,18 @@ class Entity {
   }
   get isValid() {
     return !this.removed;
+  }
+  /**
+   * 消えたエンティティに触ると本物は例外を投げる。
+   * そこを黙って通してしまうと「消えたのに気づけない」不具合を
+   * テストで再現できなくなるので、同じように投げる。
+   */
+  get location() {
+    if (this.removed) throw new Error("entity is no longer valid");
+    return { ...this._location };
+  }
+  set location(value) {
+    this._location = { ...value };
   }
   addTag(tag) {
     this.tags.add(tag);
@@ -390,6 +402,12 @@ class Dimension {
     return { successCount: 1 };
   }
 
+  isChunkLoaded(location) {
+    return this.unloadedChunks
+      ? !this.unloadedChunks.has(`${Math.floor(location.x / 16)},${Math.floor(location.z / 16)}`)
+      : true;
+  }
+
   setWeather(type, duration) {
     if (!WeatherType[type]) throw new Error(`unknown weather ${type}`);
     world._weather = { type, duration };
@@ -500,6 +518,7 @@ export const world = {
     worldLoad: new Signal(),
     playerInteractWithBlock: new Signal(),
     projectileHitBlock: new Signal(),
+    projectileHitEntity: new Signal(),
     itemUse: new Signal(),
   },
 

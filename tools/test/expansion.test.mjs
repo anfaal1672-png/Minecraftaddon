@@ -5,10 +5,19 @@
  *   ・建築系の地形生成
  */
 import { expect, suite, test } from "./harness.mjs";
-import { freshWorld, placeTnt, primedEntities, system, tickBlock } from "./setup.mjs";
+import {
+  burnFuse, freshWorld, placeTnt, primedEntities, solidGround, system, tickBlock, tickBlockIgnite,
+} from "./setup.mjs";
+import { readJson } from "../lib/io.mjs";
+import { world } from "./mock/server.mjs";
+import { flashbangHit, throwableList } from "../../BP/scripts/gear/throwables.js";
+import { clearTimers, pendingTimers, toolList, useBlastRod, useTimer } from "../../BP/scripts/gear/tools.js";
+import { clearFuses, lightFuse } from "../../BP/scripts/gear/blocks.js";
+import { THROWABLES, TOOLS } from "../../BP/scripts/data/gear-table.js";
+import { applyEffects, damageArea, knockOutward } from "../../BP/scripts/lib/entities.js";
 import { clearMines, PROXIMITY_RANGE } from "../../BP/scripts/core/ignition.js";
 import {
-  buildBridges, buildShelter, buildWall, carveBox, carveTunnels,
+  buildBridges, buildShelter, buildWall, carveBox, carveSphere, carveTunnels,
   fillBasin, flattenArea, raiseScaffold, spiralStairs,
 } from "../../BP/scripts/lib/terrain.js";
 import { CATEGORIES, configsInCategory, tntConfig } from "../../BP/scripts/core/registry.js";
@@ -188,5 +197,216 @@ suite("拡張後の全体", () => {
       expect.equal(cfg.power, 0, `${cfg.id} が爆発してしまう`);
       expect.equal(cfg.breaks, false, `${cfg.id} が地形を壊す設定になっている`);
     }
+  });
+});
+
+suite("起爆中TNTの扱い", () => {
+  test("バニラの minecraft:tnt と同じ作りになっている", () => {
+    // bedrock-samples の behavior_pack/entities/tnt.json と突き合わせた内容
+    const entity = readJson("BP/entities/primed_tnt.json")["minecraft:entity"];
+    const c = entity.components;
+    expect.deepEqual(c["minecraft:collision_box"], { height: 0.98, width: 0.98 });
+    expect.deepEqual(c["minecraft:pushable"], { is_pushable: false, is_pushable_by_piston: true });
+    expect.deepEqual(c["minecraft:type_family"], { family: ["tnt", "inanimate"] });
+    expect.ok(c["minecraft:physics"], "physics が無い");
+    expect.equal(c["minecraft:explode"].power, 4);
+    expect.equal(c["minecraft:explode"].fuse_length, 4);
+    expect.equal(c["minecraft:explode"].fuse_lit, true);
+    // 体力を持たせない (持たせると殴られて死ぬ)
+    expect.equal(c["minecraft:health"], undefined, "体力を持ってしまっている");
+  });
+
+  test("ダメージでは死なない", () => {
+    const c = readJson("BP/entities/primed_tnt.json")["minecraft:entity"].components;
+    const sensor = c["minecraft:damage_sensor"];
+    expect.ok(sensor, "ダメージを無効にする設定が無い");
+    expect.equal(sensor.triggers[0].cause, "all");
+    expect.equal(sensor.triggers[0].deals_damage, "no");
+  });
+
+  test("効果は起爆中のTNTを巻き込まない", () => {
+    // 核の熱線が、飛んでいる他のTNTを消してしまわないこと
+    const dim = freshWorld();
+    const flying = dim.spawnEntity("manytnt:primed_tnt", { x: 2, y: 64, z: 0 });
+    const cow = dim.spawnEntity("minecraft:cow", { x: 3, y: 64, z: 0 });
+    damageArea(dim, { x: 0, y: 64, z: 0 }, 10, 100);
+    expect.equal(flying.damage.length, 0, "起爆中のTNTにダメージが入っている");
+    expect.atLeast(cow.damage.length, 1, "本来の対象にダメージが入っていない");
+  });
+
+  test("爆風では起爆中のTNTも飛ぶ", () => {
+    // 巻き込まないと言っても、押し出しはバニラと同じく効かせる
+    const dim = freshWorld();
+    const flying = dim.spawnEntity("manytnt:primed_tnt", { x: 3, y: 64, z: 0 });
+    knockOutward(dim, { x: 0, y: 64, z: 0 }, 10, 2);
+    expect.atLeast(flying.impulses.length + flying.knockbacks.length, 1, "起爆中のTNTが押されていない");
+  });
+
+  test("状態異常やテレポートの対象にもならない", () => {
+    const dim = freshWorld();
+    const flying = dim.spawnEntity("manytnt:primed_tnt", { x: 1, y: 64, z: 0 });
+    applyEffects(dim, { x: 0, y: 64, z: 0 }, 10, [["minecraft:slowness", 100, 1]]);
+    expect.equal(flying.effects.length, 0, "起爆中のTNTに効果が付いている");
+  });
+
+  test("爆発せずに消えたTNTは、代わりに爆発させる", () => {
+    // 「着火したのにTNTが消えただけで何も起きない」を防ぐ保険
+    const dim = freshWorld();
+    solidGround(dim);
+    placeTnt(dim, { x: 0, y: 64, z: 0 }, "mega_tnt");
+    tickBlockIgnite(dim, { x: 0, y: 64, z: 0 });
+    const [tnt] = primedEntities(dim);
+    expect.ok(tnt, "起爆中のTNTが生まれていない");
+
+    // 爆発イベントを起こさずに消す (ダメージ死やチャンクの読み込み外れを模す)
+    tnt.remove();
+    system.advance(200);
+    expect.atLeast(dim.explosions.length, 1, "消えたまま何も起きていない");
+  });
+
+  test("正常に爆発したTNTを二重に爆発させない", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    placeTnt(dim, { x: 0, y: 64, z: 0 }, "mega_tnt");
+    tickBlockIgnite(dim, { x: 0, y: 64, z: 0 });
+    const [tnt] = primedEntities(dim);
+    burnFuse(dim, tnt);          // 本来の流れ (爆発 → エンティティ消滅)
+    system.advance(200);
+    expect.equal(dim.explosions.length, 1, "二重に爆発している");
+  });
+});
+
+suite("TNT以外の追加物", () => {
+  const player = () => ({
+    typeId: "minecraft:player",
+    location: { x: 0, y: 64, z: 0 },
+    onScreenDisplay: { setActionBar() {} },
+    sendMessage() {},
+  });
+
+  test("投げる爆弾がすべて実体につながっている", () => {
+    for (const bomb of throwableList()) {
+      expect.ok(bomb.run, `${bomb.id} の当たったときの処理が無い`);
+    }
+    expect.equal(throwableList().length, THROWABLES.length);
+  });
+
+  test("道具がすべて実体につながっている", () => {
+    for (const tool of toolList()) {
+      expect.ok(tool.run, `${tool.id} の処理が無い`);
+    }
+    expect.equal(toolList().length, TOOLS.length);
+  });
+
+  test("投げた爆弾が当たると爆発する", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    const projectile = dim.spawnEntity("manytnt:grenade_projectile", { x: 0, y: 66, z: 0 });
+    world.afterEvents.projectileHitBlock.emit({
+      dimension: dim,
+      projectile,
+      location: { x: 0, y: 66, z: 0 },
+      getBlockHit: () => ({ block: dim.getBlock({ x: 0, y: 65, z: 0 }) }),
+    });
+    system.advance(5);
+    expect.atLeast(dim.explosions.length, 1, "当たっても爆発しない");
+  });
+
+  test("同じ1発を二重に処理しない", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    const projectile = dim.spawnEntity("manytnt:grenade_projectile", { x: 0, y: 66, z: 0 });
+    const hit = {
+      dimension: dim,
+      projectile,
+      location: { x: 0, y: 66, z: 0 },
+      getBlockHit: () => ({ block: dim.getBlock({ x: 0, y: 65, z: 0 }) }),
+    };
+    // ブロックとエンティティに同時に当たった場合を模す
+    world.afterEvents.projectileHitBlock.emit(hit);
+    world.afterEvents.projectileHitEntity.emit(hit);
+    system.advance(5);
+    expect.equal(dim.explosions.length, 1, "二重に爆発している");
+  });
+
+  test("閃光弾は何も壊さない", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    const before = dim._blocks.size;
+    const target = dim.spawnEntity("minecraft:cow", { x: 1, y: 81, z: 0 });
+    flashbangHit(dim, { x: 0, y: 81, z: 0 });
+    system.advance(20);
+    expect.equal(dim._blocks.size, before, "ブロックが減っている");
+    expect.equal(dim.explosions.length, 0, "爆発している");
+    expect.atLeast(target.effects.length, 1, "効果が付いていない");
+  });
+
+  test("一斉起爆ロッドは範囲のTNTを全部着火する", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    for (const x of [-6, -2, 2, 6]) placeTnt(dim, { x, y: 81, z: 0 }, "mini_tnt");
+    placeTnt(dim, { x: 30, y: 81, z: 0 }, "mini_tnt"); // 範囲外
+
+    const p = player();
+    p.dimension = dim;
+    p.getBlockFromViewDirection = () => ({ block: dim.getBlock({ x: 0, y: 81, z: 0 }) });
+    useBlastRod(p);
+    system.advance(60);
+
+    expect.equal(primedEntities(dim).length, 4, "範囲内が全部着火していない");
+    expect.equal(dim.getBlock({ x: 30, y: 81, z: 0 }).typeId, "manytnt:mini_tnt", "範囲外まで着火している");
+  });
+
+  test("時限装置は指定した時間で着火し、解除もできる", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    clearTimers();
+    placeTnt(dim, { x: 0, y: 81, z: 0 }, "mega_tnt");
+
+    const p = player();
+    p.dimension = dim;
+    p.getBlockFromViewDirection = () => ({ block: dim.getBlock({ x: 0, y: 81, z: 0 }) });
+
+    useTimer(p);
+    expect.equal(pendingTimers(), 1, "予約されていない");
+    system.advance(60);
+    expect.equal(primedEntities(dim).length, 0, "早く着火しすぎている");
+    system.advance(60);
+    expect.equal(primedEntities(dim).length, 1, "指定した時間で着火していない");
+
+    // もう一度使うと解除できる
+    clearTimers();
+    placeTnt(dim, { x: 4, y: 81, z: 0 }, "mega_tnt");
+    p.getBlockFromViewDirection = () => ({ block: dim.getBlock({ x: 4, y: 81, z: 0 }) });
+    useTimer(p);
+    useTimer(p);
+    expect.equal(pendingTimers(), 0, "解除できていない");
+  });
+
+  test("導火線が隣へ燃え広がってTNTを着火する", () => {
+    const dim = freshWorld();
+    solidGround(dim);
+    clearFuses();
+    // 導火線を一列に並べ、端にTNTを置く
+    for (let x = 0; x < 6; x++) dim._setBlock(x, 81, 0, "manytnt:fuse_block");
+    placeTnt(dim, { x: 6, y: 81, z: 0 }, "mini_tnt");
+
+    lightFuse(dim, { x: 0, y: 81, z: 0 });
+    system.advance(200);
+
+    for (let x = 0; x < 6; x++) {
+      expect.ok(dim.getBlock({ x, y: 81, z: 0 }).isAir, `導火線 ${x} が燃え残っている`);
+    }
+    expect.equal(primedEntities(dim).length, 1, "端のTNTが着火していない");
+  });
+
+  test("耐爆ブロックはどのTNTでも壊れない", () => {
+    const dim = freshWorld();
+    dim.fill({ x: -20, y: 60, z: -20 }, { x: 20, y: 70, z: 20 }, "minecraft:stone");
+    dim._setBlock(5, 64, 0, "manytnt:blast_proof_block");
+    carveSphere(dim, { x: 0, y: 64, z: 0 }, { radius: 15 });
+    system.drain();
+    expect.equal(dim.getBlock({ x: 5, y: 64, z: 0 }).typeId, "manytnt:blast_proof_block", "耐爆ブロックが消えた");
+    expect.ok(dim.getBlock({ x: 3, y: 64, z: 0 }).isAir, "周りが掘れていない");
   });
 });

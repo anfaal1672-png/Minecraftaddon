@@ -11,32 +11,42 @@
  * エンティティを自前で持ち、種類の番号 (manytnt:kind) でテクスチャを選ぶ。
  */
 import { fuseLengths, NAMESPACE, TNT_IDS } from "../../data/index.mjs";
+import { THROWABLES } from "../../data/gear.mjs";
 import { writeJson } from "../lib/io.mjs";
 
 const NS = NAMESPACE;
+
+/**
+ * バニラの minecraft:tnt と同じ書式で書く。
+ * bedrock-samples の behavior_pack/entities/tnt.json を土台にしてあり、
+ * 足しているのは「種類ごとの見た目」と「種類ごとの導火線」だけ。
+ */
 const ENTITY_FORMAT = "1.21.90";
+
+/** 連鎖着火のときに使うイベント。名前もバニラに合わせてある */
+export const CHAIN_FUSE_EVENT = "from_explosion";
 
 /** 導火線の長さ (tick) を、エンティティが扱う秒に直す */
 const toSeconds = (ticks) => Math.round((ticks / 20) * 100) / 100;
 
 export function behaviorEntity() {
-  const explode = (fuseLength, causesFire = false) => ({
+  const explode = (fuseLength) => ({
     "minecraft:explode": {
-      causes_fire: causesFire,
+      causes_fire: false,
       fuse_lit: true,
       // 実際の威力・破壊はスクリプト側で組み立て直すので、
-      // ここは「爆発イベントを起こすための最小の値」でよい
+      // ここはバニラと同じ 4 のままでよい (爆発イベントを起こすためだけ)
       power: 4,
       fuse_length: fuseLength,
     },
   });
 
+  // バニラと同じ「他の爆発に巻き込まれたときの短い導火線」
   const groups = {
-    // 他の爆発に巻き込まれたときの導火線。バニラと同じく 0.5〜2秒
-    [`${NS}:short_fuse`]: explode({ range_min: 0.5, range_max: 2.0 }),
+    [CHAIN_FUSE_EVENT]: explode({ range_max: 2.0, range_min: 0.5 }),
   };
   const events = {
-    [`${NS}:short_fuse`]: { add: { component_groups: [`${NS}:short_fuse`] } },
+    [CHAIN_FUSE_EVENT]: { add: { component_groups: [CHAIN_FUSE_EVENT] } },
   };
   for (const ticks of fuseLengths()) {
     const name = `${NS}:fuse_${ticks}`;
@@ -64,6 +74,7 @@ export function behaviorEntity() {
         },
       },
       components: {
+        // ここから下はバニラの tnt.json と同じ内容・同じ並び
         "minecraft:collision_box": { height: 0.98, width: 0.98 },
         "minecraft:conditional_bandwidth_optimization": {
           default_values: {
@@ -72,12 +83,18 @@ export function behaviorEntity() {
             use_motion_prediction_hints: true,
           },
         },
-        // 既定の導火線はバニラと同じ4秒。種類ごとの長さは
-        // 着火時に component_group を足して差し替える
         ...explode(4),
         "minecraft:physics": {},
         "minecraft:pushable": { is_pushable: false, is_pushable_by_piston: true },
         "minecraft:type_family": { family: ["tnt", "inanimate"] },
+
+        // バニラに無いのはここだけ。
+        // 本家の起爆中TNTは体力を持たないので殴っても矢が当たっても死なないが、
+        // アドオンのエンティティは何かの拍子にダメージを受けて
+        // 「爆発せずに消える」ことがある。それを確実に防ぐために付けてある。
+        "minecraft:damage_sensor": {
+          triggers: [{ cause: "all", deals_damage: "no" }],
+        },
       },
       component_groups: groups,
       events,
@@ -168,9 +185,85 @@ export function geometry() {
   };
 }
 
+/**
+ * 投げた爆弾が飛んでいる間のエンティティ。
+ *
+ * バニラの snowball と同じ作りで、当たったら消えるだけ。
+ * 何が起きるかはスクリプト側が projectileHit を受け取って組み立てる。
+ */
+export function throwableEntity(bomb) {
+  return {
+    format_version: ENTITY_FORMAT,
+    "minecraft:entity": {
+      description: {
+        identifier: `${NS}:${bomb.id}_projectile`,
+        is_experimental: false,
+        is_summonable: true,
+        is_spawnable: false,
+        spawn_category: "misc",
+      },
+      components: {
+        "minecraft:collision_box": { height: 0.25, width: 0.25 },
+        "minecraft:conditional_bandwidth_optimization": {
+          default_values: {
+            max_dropped_ticks: 7,
+            max_optimized_distance: 100.0,
+            use_motion_prediction_hints: true,
+          },
+        },
+        "minecraft:physics": {},
+        "minecraft:projectile": {
+          anchor: 1,
+          angle_offset: 0.0,
+          offset: [0, -0.1, 0],
+          gravity: bomb.gravity,
+          power: bomb.power,
+          on_hit: {
+            // 見た目の跳ね返りだけ本家に合わせ、中身はスクリプトで作る
+            particle_on_hit: {
+              num_particles: 6,
+              on_other_hit: true,
+              on_entity_hit: true,
+              particle_type: "explode",
+            },
+            remove_on_hit: {},
+          },
+        },
+        "minecraft:pushable": { is_pushable: true, is_pushable_by_piston: true },
+      },
+    },
+  };
+}
+
+/**
+ * 投擲物の見た目。バニラの snowball と同じく、
+ * アイテムの絵をそのまま板として飛ばす (専用のモデルが要らない)。
+ */
+export function throwableClientEntity(bomb) {
+  return {
+    format_version: "1.10.0",
+    "minecraft:client_entity": {
+      description: {
+        identifier: `${NS}:${bomb.id}_projectile`,
+        materials: { default: "snowball" },
+        textures: { default: `textures/items/${bomb.id}` },
+        geometry: { default: "geometry.item_sprite" },
+        render_controllers: ["controller.render.item_sprite"],
+        animations: { flying: "animation.actor.billboard" },
+        scripts: { animate: ["flying"] },
+      },
+    },
+  };
+}
+
 export function generateEntity() {
   writeJson("BP/entities/primed_tnt.json", behaviorEntity());
   writeJson("RP/entity/primed_tnt.entity.json", clientEntity());
   writeJson("RP/render_controllers/primed_tnt.render_controllers.json", renderController());
   writeJson("RP/models/entity/primed_tnt.geo.json", geometry());
+
+  for (const bomb of THROWABLES) {
+    writeJson(`BP/entities/${bomb.id}_projectile.json`, throwableEntity(bomb));
+    writeJson(`RP/entity/${bomb.id}_projectile.entity.json`, throwableClientEntity(bomb));
+  }
 }

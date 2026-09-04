@@ -125,7 +125,8 @@ suite("画面", () => {
     queueResponses({ canceled: true, cancelationReason: "UserClosed" });
     await openMainMenu(player());
     expect.equal(shown.length, 1);
-    expect.equal(shown[0].buttons.length, 3);
+    // 図鑑・道具・記録・設定
+    expect.equal(shown[0].buttons.length, 4);
     expect.includes(shown[0].body, String(TNT_COUNT));
   });
 

@@ -46,8 +46,7 @@ export function resetChainCount() {
 }
 
 /** 近くのTNTの座標を集める */
-function findNearbyTnt(dimension, center) {
-  const R = CHAIN_RADIUS;
+function findNearbyTnt(dimension, center, R = CHAIN_RADIUS) {
   const found = attempt("chain:getBlocks", () => {
     const volume = new BlockVolume(
       { x: center.x - R, y: center.y - R, z: center.z - R },
@@ -106,6 +105,43 @@ export function chainReaction(dimension, center) {
     lit++;
     const delay = 2 + Math.floor(Math.random() * 10);
     attempt("chain:schedule", () =>
+      system.runTimeout(() => ignite(dimension, loc, typeId, { chained: true, key }), delay)
+    );
+  }
+  return lit;
+}
+
+/**
+ * 指定した半径のTNTをまとめて着火する。
+ *
+ * 連鎖爆発と違って、こちらは人が道具で狙って撃つもの
+ * (一斉起爆ロッド・起爆装置ブロック) なので、
+ * 連鎖の上限には数えない。ただし1回で着けられる数には上限を設ける。
+ *
+ * @returns 着火した数
+ */
+export const MANUAL_IGNITE_CAP = 200;
+
+export function chainRadiusIgnite(dimension, center, radius) {
+  const r2 = radius * radius;
+  let lit = 0;
+
+  for (const loc of findNearbyTnt(dimension, center, Math.round(radius))) {
+    const dx = loc.x - center.x, dy = loc.y - center.y, dz = loc.z - center.z;
+    if (dx * dx + dy * dy + dz * dz > r2) continue;
+    if (lit >= MANUAL_IGNITE_CAP) break;
+
+    const key = reserve(dimension, loc);
+    if (!key) continue;
+    const typeId = attempt("chain:manualType", () => dimension.getBlock(loc)?.typeId, null);
+    if (!typeId || !isTnt(typeId)) {
+      release(key);
+      continue;
+    }
+    lit++;
+    // 少しずつずらして着火すると、同時爆発による負荷の山ができない
+    const delay = 1 + Math.floor(lit / 4);
+    attempt("chain:manualSchedule", () =>
       system.runTimeout(() => ignite(dimension, loc, typeId, { chained: true, key }), delay)
     );
   }

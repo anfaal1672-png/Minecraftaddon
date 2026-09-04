@@ -47,17 +47,25 @@
           "tnt",
           "inanimate"
         ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "all",
+            "deals_damage": "no"
+          }
+        ]
       }
     },
     "component_groups": {
-      "manytnt:short_fuse": {
+      "from_explosion": {
         "minecraft:explode": {
           "causes_fire": false,
           "fuse_lit": true,
           "power": 4,
           "fuse_length": {
-            "range_min": 0.5,
-            "range_max": 2
+            "range_max": 2,
+            "range_min": 0.5
           }
         }
       },
@@ -143,10 +151,10 @@
       }
     },
     "events": {
-      "manytnt:short_fuse": {
+      "from_explosion": {
         "add": {
           "component_groups": [
-            "manytnt:short_fuse"
+            "from_explosion"
           ]
         }
       },

@@ -8,21 +8,32 @@ import { dist, falloff, horizontalDirection } from "./math.js";
 export const ITEM_LIKE = new Set(["minecraft:item", "minecraft:xp_orb"]);
 
 /**
+ * 導火線が燃えている最中のTNT。
+ *
+ * 本家のTNTは、他の爆発に巻き込まれても吹き飛ぶだけで壊れない。
+ * ダメージ・状態異常・テレポートの対象にしてしまうと、
+ * 「着火したのに爆発せずに消えた」という形で壊れるので、
+ * こちらから手を出す対象からは既定で外しておく。
+ */
+export const PRIMED_TNT_TYPES = new Set(["manytnt:primed_tnt", "minecraft:tnt"]);
+
+/**
  * 周囲のエンティティ。
  * @param options.players プレイヤーを含めるか (既定 true)
  * @param options.items   アイテムと経験値オーブを含めるか (既定 true)
+ * @param options.tnt     起爆中のTNTを含めるか (既定 false)
  */
-export function entitiesNear(dimension, center, radius, { players = true, items = true } = {}) {
+export function entitiesNear(dimension, center, radius, { players = true, items = true, tnt = false } = {}) {
   let found;
   try {
     found = dimension.getEntities({ location: center, maxDistance: radius });
   } catch (err) {
     return [];
   }
-  if (players && items) return found;
   return found.filter((ent) => {
     if (!players && ent.typeId === "minecraft:player") return false;
     if (!items && ITEM_LIKE.has(ent.typeId)) return false;
+    if (!tnt && PRIMED_TNT_TYPES.has(ent.typeId)) return false;
     return true;
   });
 }
@@ -101,9 +112,12 @@ export function applyEffects(dimension, center, radius, effects, options = {}) {
   return targets.length;
 }
 
-/** 外向きに吹き飛ばす。中心から遠いほど弱くなる */
+/**
+ * 外向きに吹き飛ばす。中心から遠いほど弱くなる。
+ * 起爆中のTNTも一緒に飛ばす (本家の爆発と同じ)。
+ */
 export function knockOutward(dimension, center, radius, maxStrength, { lift = 0.35 } = {}) {
-  for (const ent of entitiesNear(dimension, center, radius)) {
+  for (const ent of entitiesNear(dimension, center, radius, { tnt: true })) {
     const loc = locationOf(ent);
     if (!loc) continue;
     const dir = horizontalDirection(center, loc);
@@ -112,9 +126,12 @@ export function knockOutward(dimension, center, radius, maxStrength, { lift = 0.
   }
 }
 
-/** 中心へ引き寄せる。近いほど強く引く */
+/**
+ * 中心へ引き寄せる。近いほど強く引く。
+ * 起爆中のTNTも一緒に引き込む (本家の爆発と同じで、壊しはしない)。
+ */
 export function pullInward(dimension, center, radius, strength, { vertical = 0.6, cap = 1.4 } = {}) {
-  for (const ent of entitiesNear(dimension, center, radius)) {
+  for (const ent of entitiesNear(dimension, center, radius, { tnt: true })) {
     const loc = locationOf(ent);
     if (!loc) continue;
     const dx = center.x - loc.x, dy = center.y - loc.y, dz = center.z - loc.z;

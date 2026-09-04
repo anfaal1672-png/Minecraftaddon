@@ -16,6 +16,7 @@
  *   RP/textures/items/catalog.png            図鑑アイテムの絵
  */
 import { TNT_BY_ID, TNT_IDS } from "../../data/index.mjs";
+import { GEAR_BLOCKS, GEAR_ITEMS } from "../../data/gear.mjs";
 import { canvas, isLight, mix, shade } from "../lib/png.mjs";
 import { assertEmblems, EMBLEMS } from "../lib/emblems.mjs";
 import { BOTTOM, RAINBOW_ROWS } from "../lib/style.mjs";
@@ -152,36 +153,32 @@ export function buildEntityAtlas(side, top, bottom) {
 }
 
 /**
- * 図鑑アイテムの絵。本の背に導火線が刺さっている見た目。
- * ブロックと違ってバニラを土台にできないので、ここで直接描く。
+ * 道具と投擲爆弾のアイコン (16×16)。
+ *
+ * ブロックと違ってバニラのテクスチャを土台にできないので、
+ * 色の付いた角丸の板に紋章を載せる形で直接描く。
+ * 紋章はTNTと共通なので、持ち物の中でも同じ絵柄で見分けがつく。
  */
-export function catalogIcon() {
+export function itemIcon(visual) {
   const c = canvas(16);
-  const cover = "#8c2a1e";
-  const coverDark = shade(cover, -0.3);
-  const page = "#e8e2d2";
-  const pageDark = shade(page, -0.15);
-  const fuse = "#c8a24a";
-
-  for (let y = 2; y <= 14; y++) {
-    for (let x = 2; x <= 13; x++) {
-      const isSpine = x <= 3;
-      const isEdge = y === 2 || y === 14 || x === 13;
-      c.put(x, y, isSpine ? (isEdge ? coverDark : cover) : isEdge ? pageDark : page);
+  const palette = buildPalette(visual);
+  for (let y = 1; y <= 14; y++) {
+    for (let x = 1; x <= 14; x++) {
+      // 四隅を落として角丸にする
+      const corner = (x <= 2 || x >= 13) && (y <= 2 || y >= 13);
+      if (corner && (x + y) % 2 === 0 && (x <= 1 || x >= 14 || y <= 1 || y >= 14)) continue;
+      if ((x === 1 || x === 14) && (y === 1 || y === 14)) continue;
+      let color = palette.body;
+      if (y <= 2) color = palette.bright;
+      else if (y >= 12) color = palette.dark;
+      else if (x === 1 || x === 14) color = palette.crimson;
+      c.put(x, y, color);
     }
   }
-  // 背の留め具
-  for (const y of [4, 7, 10, 13]) c.put(2, y, shade(cover, 0.25));
-  // ページに引いた線
-  for (const y of [5, 7, 9, 11]) {
-    for (let x = 6; x <= 11; x++) c.put(x, y, pageDark);
-  }
-  // 上に出た導火線
-  c.put(4, 1, fuse);
-  c.put(5, 0, fuse);
-  c.put(6, 1, shade(fuse, -0.25));
+  drawGlyph(c, palette, visual.emblem);
   return c;
 }
+
 
 /**
  * 全テクスチャを書き出す。
@@ -223,7 +220,21 @@ export function generateTextures({ only = null } = {}) {
   if (!only) {
     // 底面は全種共通
     if (writeBinary("RP/textures/blocks/tnt_bottom.png", bottomFace.toPng())) count++;
-    if (writeBinary("RP/textures/items/catalog.png", catalogIcon().toPng())) count++;
+
+    // 道具と投擲爆弾のアイコン
+    for (const gear of GEAR_ITEMS) {
+      if (writeBinary(`RP/textures/items/${gear.id}.png`, itemIcon(gear.visual).toPng())) count++;
+    }
+
+    // 仕掛けブロックは、TNTと同じ作りのテクスチャにする
+    for (const block of GEAR_BLOCKS) {
+      const palette = buildPalette(block.visual);
+      const side = paint(vanilla.faces.side, palette, { blankGlyph: true });
+      drawGlyph(side, palette, block.visual.emblem);
+      const top = paint(vanilla.faces.top, palette);
+      if (writeBinary(`RP/textures/blocks/${block.id}_side.png`, side.toPng())) count++;
+      if (writeBinary(`RP/textures/blocks/${block.id}_top.png`, top.toPng())) count++;
+    }
   }
 
   return { count, source: vanilla.dir };

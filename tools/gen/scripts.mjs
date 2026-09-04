@@ -11,6 +11,7 @@
  */
 import { TNT_DEFS } from "../../data/index.mjs";
 import { CATEGORIES } from "../../data/categories.mjs";
+import { GEAR_BLOCKS, THROWABLES, TOOLS } from "../../data/gear.mjs";
 import { listFiles, readText, write } from "../lib/io.mjs";
 
 const GENERATED_HEADER = (source) =>
@@ -98,9 +99,28 @@ export function effectsIndexSource(owner) {
   );
 }
 
+/** 道具・投擲・仕掛けブロックの表 */
+export function gearTableSource() {
+  const rows = (list, extra) =>
+    list.map((g) => "  " + JSON.stringify({
+      id: g.id, name: g.name, desc: g.desc, ...extra(g),
+    }) + ",").join("\n");
+
+  return (
+    GENERATED_HEADER("data/gear.mjs") +
+    "\n/** 投げる爆弾。当たると effect が呼ばれる */\n" +
+    `export const THROWABLES = [\n${rows(THROWABLES, (g) => ({ effect: g.effect }))}\n];\n` +
+    "\n/** 手に持って使う道具 */\n" +
+    `export const TOOLS = [\n${rows(TOOLS, (g) => ({ handler: g.handler }))}\n];\n` +
+    "\n/** 仕掛けブロック */\n" +
+    `export const GEAR_BLOCKS = [\n${rows(GEAR_BLOCKS, (g) => ({ component: g.component }))}\n];\n`
+  );
+}
+
 export function generateScripts() {
   write("BP/scripts/data/tnt-table.js", tntTableSource());
   write("BP/scripts/data/categories.js", categoriesSource());
+  write("BP/scripts/data/gear-table.js", gearTableSource());
   const owner = findEffectFunctions();
   write("BP/scripts/effects/index.js", effectsIndexSource(owner));
   return { effects: [...new Set(TNT_DEFS.map((d) => d.effect).filter(Boolean))].length, defined: owner.size };

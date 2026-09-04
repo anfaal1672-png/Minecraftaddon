@@ -15,6 +15,8 @@ import { note } from "../core/log.js";
  * 消すと不自然になるもの (水・溶岩) を入れてある。
  */
 export const PROTECTED_BLOCKS = [
+  // このアドオンで足した「壊れない」ブロック
+  "manytnt:blast_proof_block",
   "minecraft:bedrock",
   "minecraft:barrier",
   "minecraft:light_block",

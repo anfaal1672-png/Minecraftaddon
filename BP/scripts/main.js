@@ -12,19 +12,23 @@
  *   core/chain.js       連鎖爆発
  *   core/stats.js       爆発の記録と実績
  *   core/menu.js        図鑑と設定の画面
- *   core/commands.js    /scriptevent と図鑑アイテム
+ *   core/commands.js    /scriptevent
  *   effects/            種類ごとの特殊効果
+ *   gear/               TNT以外の追加物 (投げる爆弾・道具・仕掛けブロック)
  *   lib/                座標・ブロック・エンティティ・演出の道具
  */
 import { world } from "@minecraft/server";
 import { attempt } from "./core/log.js";
 import { registerChainCapReset } from "./core/chain.js";
-import { registerCatalogItem, registerCommands } from "./core/commands.js";
+import { registerCommands } from "./core/commands.js";
 import { registerExplosionHook } from "./core/detonation.js";
 import { registerFuseLoop } from "./core/fuse.js";
 import { registerIgnitionSources } from "./core/ignition.js";
 import { load as loadSettings } from "./core/settings.js";
 import { loadStats } from "./core/stats.js";
+import { registerGearBlocks } from "./gear/blocks.js";
+import { registerThrowables } from "./gear/throwables.js";
+import { registerTools } from "./gear/tools.js";
 
 // ワールドが読み込まれる前に dynamic property は読めないので、
 // 保存してあるものはすべてここで読み直す。
@@ -40,4 +44,8 @@ registerFuseLoop();
 registerExplosionHook();
 registerChainCapReset();
 registerCommands();
-registerCatalogItem();
+
+// TNT以外の追加物 (投げる爆弾・道具・仕掛けブロック)
+registerThrowables();
+registerTools();
+registerGearBlocks();

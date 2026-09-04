@@ -13,7 +13,7 @@ import { EquipmentSlot, system, world } from "@minecraft/server";
 import { attempt } from "./log.js";
 import { announce } from "./chat.js";
 import { spawnPrimed } from "./fuse.js";
-import { DETONATOR_ITEM, gachaCandidates, isTnt, tntConfig } from "./registry.js";
+import { gachaCandidates, isTnt, tntConfig } from "./registry.js";
 import { pick } from "../lib/math.js";
 import { sound } from "../lib/fx.js";
 
@@ -141,6 +141,11 @@ function isPowered(block) {
 /** 地雷が反応する距離 (ブロック) */
 export const PROXIMITY_RANGE = 2.5;
 
+/** 地雷が反応しないもの */
+const IGNORED_BY_MINES = new Set([
+  "minecraft:item", "minecraft:xp_orb", "minecraft:tnt", "manytnt:primed_tnt",
+]);
+
 /**
  * 地雷TNT。近づいたものを検知して自分から着火する。
  *
@@ -166,7 +171,8 @@ function trippedByProximity(dimension, block) {
   const center = { x: block.location.x + 0.5, y: block.location.y + 0.5, z: block.location.z + 0.5 };
   const nearby = attempt("ignition:proximity", () =>
     dimension.getEntities({ location: center, maxDistance: PROXIMITY_RANGE }), []);
-  const tripped = nearby.some((ent) => ent.typeId !== "minecraft:item" && ent.typeId !== "minecraft:xp_orb");
+  // 落ちているアイテムと、飛んでいる最中のTNTでは反応しない
+  const tripped = nearby.some((ent) => !IGNORED_BY_MINES.has(ent.typeId));
   if (tripped) armedAt.delete(key);
   return tripped;
 }
@@ -251,31 +257,9 @@ export function registerBurningArrow() {
   );
 }
 
-/** 遠隔起爆装置。視線の先 64 ブロック以内のTNTに火を点ける */
-export function registerDetonator() {
-  attempt("ignition:detonator", () =>
-    world.afterEvents.itemUse.subscribe((event) => {
-      const player = event.source;
-      if (!player || event.itemStack?.typeId !== DETONATOR_ITEM) return;
-
-      const hit = attempt("ignition:ray", () => player.getBlockFromViewDirection({ maxDistance: 64 }), null);
-      const block = hit?.block;
-      if (!block || !isTnt(block.typeId)) {
-        attempt("ignition:actionBar", () =>
-          player.onScreenDisplay.setActionBar("§7起爆できるTNTが見つかりません (64ブロック以内)§r"));
-        return;
-      }
-      if (isReserved(player.dimension, block.location)) return;
-      sound(player.dimension, "random.click", player.location);
-      ignite(player.dimension, block.location, block.typeId);
-    })
-  );
-}
-
 /** 着火まわりをまとめて登録する */
 export function registerIgnitionSources() {
   registerBlockComponent();
   registerFlintAndSteel();
   registerBurningArrow();
-  registerDetonator();
 }

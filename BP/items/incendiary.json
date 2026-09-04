@@ -1,0 +1,29 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:item": {
+    "description": {
+      "identifier": "manytnt:incendiary",
+      "menu_category": {
+        "category": "items",
+        "group": "manytnt:gear_group"
+      }
+    },
+    "components": {
+      "minecraft:icon": "manytnt_incendiary",
+      "minecraft:max_stack_size": 16,
+      "minecraft:hand_equipped": false,
+      "minecraft:cooldown": {
+        "category": "manytnt_throw",
+        "duration": 0.5
+      },
+      "minecraft:projectile": {
+        "projectile_entity": "manytnt:incendiary_projectile"
+      },
+      "minecraft:throwable": {
+        "do_swing_animation": true,
+        "launch_power_scale": 1.6,
+        "max_launch_power": 1.6
+      }
+    }
+  }
+}

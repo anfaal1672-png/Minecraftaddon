@@ -1,0 +1,54 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:block": {
+    "description": {
+      "identifier": "manytnt:detonator_block",
+      "menu_category": {
+        "category": "items",
+        "group": "manytnt:gear_group"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "up": {
+          "texture": "manytnt:detonator_block_top"
+        },
+        "down": {
+          "texture": "manytnt:detonator_block_top"
+        },
+        "north": {
+          "texture": "manytnt:detonator_block_side"
+        },
+        "south": {
+          "texture": "manytnt:detonator_block_side"
+        },
+        "east": {
+          "texture": "manytnt:detonator_block_side"
+        },
+        "west": {
+          "texture": "manytnt:detonator_block_side"
+        }
+      },
+      "minecraft:map_color": "#942a23",
+      "minecraft:loot": "loot_tables/blocks/detonator_block.json",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.6
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 1200
+      },
+      "minecraft:redstone_conductivity": {
+        "redstone_conductor": true,
+        "allows_wire_to_step_down": true
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          5,
+          5
+        ]
+      },
+      "manytnt:detonator_block": {}
+    }
+  }
+}

@@ -60,6 +60,36 @@ export function detonate(dimension, center, cfg) {
   chainReaction(dimension, blockPos(center));
 }
 
+/**
+ * 既に爆発させた起爆中TNTの覚え書き。
+ *
+ * core/fuse.js は「姿が消えたのに爆発していない」TNTを拾って
+ * 代わりに爆発させるが、そのときここを見て二重爆発を避ける。
+ * 増え続けないよう、古いものから捨てていく。
+ */
+const detonatedIds = new Set();
+const DETONATED_MEMORY = 256;
+
+function rememberDetonated(entityId) {
+  if (!entityId) return;
+  detonatedIds.add(entityId);
+  if (detonatedIds.size > DETONATED_MEMORY) {
+    // Set は入れた順に回るので、先頭 (いちばん古い) を落とす
+    const oldest = detonatedIds.values().next().value;
+    detonatedIds.delete(oldest);
+  }
+}
+
+/** そのエンティティは既に爆発済みか */
+export function wasDetonated(entityId) {
+  return detonatedIds.has(entityId);
+}
+
+/** 覚え書きを捨てる (テスト用) */
+export function clearDetonated() {
+  detonatedIds.clear();
+}
+
 /** 起爆中エンティティに付いているタグから、種類を割り出す */
 function configFromSource(source) {
   if (!source || source.typeId !== PRIMED_TNT) return null;
@@ -88,9 +118,17 @@ export function registerExplosionHook() {
       if (cfg) {
         // このアドオンのTNT。本来の爆発を取り消して、独自の手順に差し替える
         event.cancel = true;
-        const center = attempt("detonate:center", () => ({ ...event.source.location }), null);
-        if (!center) return;
-        attempt("detonate:schedule", () => system.run(() => detonate(dimension, center, cfg)));
+
+        // 識別子と座標は必ず一緒に取る。片方だけ取れた状態で先へ進むと、
+        // core/fuse.js の保険が「爆発していない」と誤判定して二重に爆発する。
+        const source = attempt("detonate:source", () => ({
+          id: event.source.id,
+          center: { ...event.source.location },
+        }), null);
+        if (!source) return; // ここで諦めても、消えたぶんは fuse.js の保険が拾う
+
+        rememberDetonated(source.id);
+        attempt("detonate:schedule", () => system.run(() => detonate(dimension, source.center, cfg)));
         return;
       }
 
