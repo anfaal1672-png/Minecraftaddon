@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:timestop_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:armageddon_tnt"
+      },
+      {
+        "item": "minecraft:clock"
+      },
+      {
+        "item": "minecraft:ender_eye"
+      }
+    ],
+    "result": {
+      "item": "manytnt:timestop_tnt",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:neutron_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:singularity_tnt"
+      },
+      {
+        "item": "minecraft:iron_block"
+      },
+      {
+        "item": "minecraft:iron_block"
+      }
+    ],
+    "result": {
+      "item": "manytnt:neutron_tnt",
+      "count": 1
+    }
+  }
+}

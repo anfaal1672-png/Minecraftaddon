@@ -1,0 +1,107 @@
+/**
+ * 兵器カテゴリのTNT。
+ *
+ * 実在する爆薬の使われ方を模したもの。核系ほどの規模は無いが、
+ * 「どう炸裂するか」の作りがそれぞれ違う。
+ *
+ * 書式は data/schema.mjs を参照。カテゴリはこのファイルに入っていること自体で決まる。
+ */
+export default [
+  {
+    id: "cluster_tnt",
+    name: { ja: "クラスターTNT", en: "Cluster TNT" },
+    desc: { ja: "空中で分裂し、広範囲に子爆弾を撒き散らす。", en: "Splits in the air and scatters bomblets over a wide area." },
+    fuse: 60,
+    blast: { power: 4, breaks: true, fire: false },
+    visual: { color: "#5c6c4c", emblem: "cluster", trail: "minecraft:basic_smoke_particle" },
+    effect: "clusterEffect",
+    traits: { launchUp: true },
+    recipe: { ingredients: ["manytnt:mega_tnt", "minecraft:gunpowder", "minecraft:gunpowder", "minecraft:iron_ingot"] },
+  },
+  {
+    id: "napalm_tnt",
+    name: { ja: "焼夷弾", en: "Napalm Bomb" },
+    desc: { ja: "粘つく炎が広がり、長いあいだ燃え続ける。", en: "Clinging fire spreads out and burns for a long time." },
+    blast: { power: 5, breaks: true, fire: true },
+    visual: { color: "#c85a1e", emblem: "napalm", trail: "minecraft:basic_flame_particle" },
+    effect: "napalmEffect",
+    recipe: { ingredients: ["manytnt:fire_tnt", "minecraft:lava_bucket", "minecraft:coal"] },
+  },
+  {
+    id: "mine_tnt",
+    name: { ja: "地雷TNT", en: "Landmine TNT" },
+    desc: { ja: "自分では爆発しない。近づいたものを巻き込んで炸裂する。", en: "Sits silent until something comes close, then goes off." },
+    fuse: 20,
+    blast: { power: 8, breaks: true, fire: false },
+    visual: { color: "#4c5240", emblem: "mine" },
+    effect: "mineEffect",
+    traits: { proximity: true },
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:stone_pressure_plate", "minecraft:iron_ingot"] },
+  },
+  {
+    id: "missile_tnt",
+    name: { ja: "ミサイルTNT", en: "Missile TNT" },
+    desc: { ja: "弧を描いて飛び、離れた場所に着弾する。", en: "Arcs through the sky and lands somewhere far off." },
+    fuse: 90,
+    blast: { power: 12, breaks: true, fire: true },
+    visual: { color: "#94a0a8", emblem: "missile", trail: "minecraft:basic_flame_particle" },
+    effect: "missileEffect",
+    traits: { launchArc: true },
+    recipe: { ingredients: ["manytnt:rocket_tnt", "manytnt:mega_tnt", "minecraft:redstone"] },
+  },
+  {
+    id: "shrapnel_tnt",
+    name: { ja: "榴散弾TNT", en: "Shrapnel TNT" },
+    desc: { ja: "破片が全方位へ飛び、遮蔽の裏まで届く。", en: "Fragments fly every way, reaching even behind cover." },
+    blast: { power: 4, breaks: true, fire: false },
+    visual: { color: "#8c8478", emblem: "shrapnel", trail: "minecraft:basic_crit_particle" },
+    effect: "shrapnelEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:iron_nugget", "minecraft:flint", "minecraft:flint"] },
+  },
+  {
+    id: "emp_tnt",
+    name: { ja: "EMP TNT", en: "EMP TNT" },
+    desc: { ja: "地形は壊さない。光源と回路だけを黙らせる。", en: "Leaves the terrain intact and silences lights and circuits." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#3c6ca8", emblem: "emp", trail: "minecraft:endrod" },
+    effect: "empEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:redstone_block", "minecraft:copper_ingot"] },
+  },
+  {
+    id: "bunker_tnt",
+    name: { ja: "貫通爆弾", en: "Bunker Buster" },
+    desc: { ja: "地中深くまで潜り込んでから炸裂する。地下施設ごと吹き飛ぶ。", en: "Drills deep underground before detonating. Bunkers included." },
+    fuse: 100,
+    blast: { power: 16, breaks: true, fire: false },
+    visual: { color: "#6c6058", emblem: "bunker", trail: "minecraft:basic_smoke_particle" },
+    effect: "bunkerEffect",
+    recipe: { ingredients: ["manytnt:mega_tnt", "manytnt:drill_tnt", "minecraft:netherite_scrap"] },
+  },
+  {
+    id: "smoke_tnt",
+    name: { ja: "煙幕TNT", en: "Smoke TNT" },
+    desc: { ja: "濃い煙が居座り、しばらく何も見えなくなる。", en: "Thick smoke settles in and blinds everything for a while." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#68686c", emblem: "smoke", trail: "minecraft:basic_smoke_particle" },
+    effect: "smokeEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:coal", "minecraft:coal"] },
+  },
+  {
+    id: "gas_tnt",
+    name: { ja: "毒ガスTNT", en: "Gas TNT" },
+    desc: { ja: "重い毒の雲が地面を這い、抜けるまで蝕み続ける。", en: "A heavy toxic cloud creeps along the ground and keeps biting." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#7c9c3c", emblem: "gasmask", trail: "minecraft:witchspell_emitter" },
+    effect: "gasEffect",
+    recipe: { ingredients: ["manytnt:poison_tnt", "minecraft:fermented_spider_eye", "minecraft:glass_bottle"] },
+  },
+  {
+    id: "flak_tnt",
+    name: { ja: "対空TNT", en: "Flak TNT" },
+    desc: { ja: "上空で連続して炸裂する。飛んでいるものを叩き落とす。", en: "Bursts again and again overhead, knocking flyers out of the sky." },
+    blast: { power: 3, breaks: false, fire: false },
+    visual: { color: "#5c7080", emblem: "flak", trail: "minecraft:basic_smoke_particle" },
+    effect: "flakEffect",
+    recipe: { ingredients: ["minecraft:tnt", "minecraft:arrow", "minecraft:iron_ingot", "minecraft:gunpowder"] },
+  },
+];

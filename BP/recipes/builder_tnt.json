@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:builder_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:brick_block"
+      },
+      {
+        "item": "minecraft:brick_block"
+      }
+    ],
+    "result": {
+      "item": "manytnt:builder_tnt",
+      "count": 1
+    }
+  }
+}

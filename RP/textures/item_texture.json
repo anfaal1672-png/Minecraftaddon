@@ -1,0 +1,36 @@
+{
+  "resource_pack_name": "many_tnt",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "manytnt_grenade": {
+      "textures": "textures/items/grenade"
+    },
+    "manytnt_incendiary": {
+      "textures": "textures/items/incendiary"
+    },
+    "manytnt_flashbang": {
+      "textures": "textures/items/flashbang"
+    },
+    "manytnt_smoke_bomb": {
+      "textures": "textures/items/smoke_bomb"
+    },
+    "manytnt_sticky_bomb": {
+      "textures": "textures/items/sticky_bomb"
+    },
+    "manytnt_detonator": {
+      "textures": "textures/items/detonator"
+    },
+    "manytnt_blast_rod": {
+      "textures": "textures/items/blast_rod"
+    },
+    "manytnt_timer_tool": {
+      "textures": "textures/items/timer_tool"
+    },
+    "manytnt_scanner": {
+      "textures": "textures/items/scanner"
+    },
+    "manytnt_catalog": {
+      "textures": "textures/items/catalog"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:block": {
+    "description": {
+      "identifier": "manytnt:slime_tnt",
+      "menu_category": {
+        "category": "items",
+        "group": "manytnt:creature_group"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "up": {
+          "texture": "manytnt:slime_tnt_top"
+        },
+        "down": {
+          "texture": "manytnt:tnt_bottom"
+        },
+        "north": {
+          "texture": "manytnt:slime_tnt_side"
+        },
+        "south": {
+          "texture": "manytnt:slime_tnt_side"
+        },
+        "east": {
+          "texture": "manytnt:slime_tnt_side"
+        },
+        "west": {
+          "texture": "manytnt:slime_tnt_side"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 1200
+      },
+      "minecraft:map_color": "#6bb241",
+      "minecraft:loot": "loot_tables/blocks/slime_tnt.json",
+      "minecraft:redstone_conductivity": {
+        "redstone_conductor": true,
+        "allows_wire_to_step_down": true
+      },
+      "minecraft:tick": {
+        "interval_range": [
+          10,
+          10
+        ]
+      },
+      "manytnt:ignite": {},
+      "minecraft:flammable": {
+        "catch_chance_modifier": 15,
+        "destroy_chance_modifier": 0
+      }
+    }
+  }
+}

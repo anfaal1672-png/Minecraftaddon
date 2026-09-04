@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:gacha_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:emerald"
+      },
+      {
+        "item": "minecraft:rabbit_foot"
+      }
+    ],
+    "result": {
+      "item": "manytnt:gacha_tnt",
+      "count": 3
+    }
+  }
+}

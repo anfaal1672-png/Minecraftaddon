@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:replicator_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:mega_tnt"
+      },
+      {
+        "item": "manytnt:gacha_tnt"
+      },
+      {
+        "item": "minecraft:nether_star"
+      }
+    ],
+    "result": {
+      "item": "manytnt:replicator_tnt",
+      "count": 1
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:bunker_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:mega_tnt"
+      },
+      {
+        "item": "manytnt:drill_tnt"
+      },
+      {
+        "item": "minecraft:netherite_scrap"
+      }
+    ],
+    "result": {
+      "item": "manytnt:bunker_tnt",
+      "count": 1
+    }
+  }
+}

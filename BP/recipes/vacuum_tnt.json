@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:vacuum_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:sponge"
+      },
+      {
+        "item": "minecraft:sponge"
+      }
+    ],
+    "result": {
+      "item": "manytnt:vacuum_tnt",
+      "count": 1
+    }
+  }
+}
