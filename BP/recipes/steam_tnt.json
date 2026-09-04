@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:steam_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:water_tnt"
+      },
+      {
+        "item": "manytnt:fire_tnt"
+      },
+      {
+        "item": "minecraft:cauldron"
+      }
+    ],
+    "result": {
+      "item": "manytnt:steam_tnt",
+      "count": 1
+    }
+  }
+}

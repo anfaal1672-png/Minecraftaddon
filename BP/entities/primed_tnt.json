@@ -61,6 +61,14 @@
           }
         }
       },
+      "manytnt:fuse_20": {
+        "minecraft:explode": {
+          "causes_fire": false,
+          "fuse_lit": true,
+          "power": 4,
+          "fuse_length": 1
+        }
+      },
       "manytnt:fuse_50": {
         "minecraft:explode": {
           "causes_fire": false,
@@ -139,6 +147,13 @@
         "add": {
           "component_groups": [
             "manytnt:short_fuse"
+          ]
+        }
+      },
+      "manytnt:fuse_20": {
+        "add": {
+          "component_groups": [
+            "manytnt:fuse_20"
           ]
         }
       },

@@ -36,6 +36,8 @@ TNT_TABLE.forEach((def, index) => {
     // よく使う判定を先に済ませておく
     isGacha: def.traits.includes("gacha"),
     launchUp: def.traits.includes("launchUp"),
+    launchArc: def.traits.includes("launchArc"),
+    proximity: def.traits.includes("proximity"),
     gravityPull: def.traits.includes("gravityPull"),
     magnetPull: def.traits.includes("magnetPull"),
   });

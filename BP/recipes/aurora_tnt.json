@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:aurora_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:glow_tnt"
+      },
+      {
+        "item": "manytnt:rainbow_tnt"
+      },
+      {
+        "item": "minecraft:prismarine_crystals"
+      }
+    ],
+    "result": {
+      "item": "manytnt:aurora_tnt",
+      "count": 1
+    }
+  }
+}

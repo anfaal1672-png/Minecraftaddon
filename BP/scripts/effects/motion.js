@@ -4,7 +4,7 @@
 import { ItemStack } from "@minecraft/server";
 import { announce } from "../core/chat.js";
 import { mayBreakBlocks } from "../core/settings.js";
-import { carveSphere } from "../lib/terrain.js";
+import { carveSphere, raiseScaffold } from "../lib/terrain.js";
 import { burst, later, particle, repeat, ring, shake, sound } from "../lib/fx.js";
 import {
   addEffect, applyEffects, dropItem, entitiesNear, itemsNear, knockOutward,
@@ -204,4 +204,35 @@ export function blackholeEffect(dimension, center) {
     shake(dimension, center, { radius: 30, intensity: 0.5, seconds: 1.2 });
     sound(dimension, "random.explode", center, { pitch: 0.6 });
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  エレベーター・突進                                                 */
+/* ------------------------------------------------------------------ */
+
+export function elevatorEffect(dimension, center) {
+  announce("§b⇧ エレベーターTNT: 上へ運ばれる ⇧§r");
+  raiseScaffold(dimension, center, {
+    height: 30,
+    candidates: ["minecraft:scaffolding", "minecraft:oak_planks"],
+    priority: 3,
+  });
+  // 柱が立つのに合わせて、周りのものも一緒に持ち上がる
+  for (const ent of entitiesNear(dimension, center, 6)) {
+    addEffect(ent, "minecraft:levitation", 100, { amplifier: 3, showParticles: true });
+    addEffect(ent, "minecraft:slow_falling", 240, { amplifier: 0 });
+  }
+  repeat(15, 4, (i) => ring(dimension, "minecraft:endrod", center, 2, { count: 8, y: i * 2 }));
+  sound(dimension, "beacon.activate", center, { pitch: 1.4 });
+}
+
+export function dashEffect(dimension, center) {
+  knockOutward(dimension, center, 10, 3.2, { lift: 0.55 });
+  for (const ent of entitiesNear(dimension, center, 10)) {
+    // 突き飛ばした責任は取る。着地で死なせない
+    addEffect(ent, "minecraft:slow_falling", 160, { amplifier: 0 });
+    addEffect(ent, "minecraft:speed", 200, { amplifier: 2 });
+  }
+  repeat(6, 2, (i) => ring(dimension, "minecraft:basic_crit_particle", center, i * 2, { count: 12 + i * 4, y: 0.5 }));
+  sound(dimension, "random.bow", center, { pitch: 0.6 });
 }

@@ -109,4 +109,22 @@ export default [
     effect: "chorusEffect",
     recipe: { ingredients: ["minecraft:tnt", "minecraft:chorus_fruit", "minecraft:popped_chorus_fruit"] },
   },
+  {
+    id: "elevator_tnt",
+    name: { ja: "エレベーターTNT", en: "Elevator TNT" },
+    desc: { ja: "柱が立ち上がり、周りのものを一緒に空へ持ち上げる。", en: "A pillar rises and carries everything nearby up with it." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#7cb4d4", emblem: "elevator", trail: "minecraft:endrod" },
+    effect: "elevatorEffect",
+    recipe: { ingredients: ["manytnt:antigravity_tnt", "minecraft:scaffolding", "minecraft:slime_ball"] },
+  },
+  {
+    id: "dash_tnt",
+    name: { ja: "突進TNT", en: "Dash TNT" },
+    desc: { ja: "外側へ強く突き飛ばす。落下ダメージは付かない。", en: "Hurls everything outward — and cancels the landing damage." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#e07a3c", emblem: "dash", trail: "minecraft:basic_crit_particle" },
+    effect: "dashEffect",
+    recipe: { ingredients: ["manytnt:speed_tnt", "minecraft:firework_rocket", "minecraft:sugar"] },
+  },
 ];

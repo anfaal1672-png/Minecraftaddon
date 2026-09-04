@@ -2,12 +2,17 @@
  * 地形と植生を作り替えるTNT。壊すより整えるものが多い。
  */
 import { ItemStack } from "@minecraft/server";
+import { announce } from "../core/chat.js";
 import { mayBreakBlocks } from "../core/settings.js";
-import { blockAt, heightLimits, setBlock, trySetBlock } from "../lib/blocks.js";
-import { carveShaft, scanDisk, scanSphere } from "../lib/terrain.js";
+import { blockAt, heightLimits, PROTECTED_SET, setBlock, setIfEmpty, trySetBlock } from "../lib/blocks.js";
+import {
+  CARDINALS, carveShaft, carveSphere, carveTunnels, fillBasin, scanDisk, scanSphere,
+} from "../lib/terrain.js";
 import { applyEffects, dropItem, knockOutward } from "../lib/entities.js";
+import { plantTree } from "./cosmic.js";
+import { igniteFires } from "./elemental.js";
 import { later, scatter, shake, sound } from "../lib/fx.js";
-import { pick } from "../lib/math.js";
+import { blockPos, pick, randomInDisk } from "../lib/math.js";
 
 export function earthquakeEffect(dimension, center) {
   knockOutward(dimension, center, 7, 0.9, { lift: 0.5 });
@@ -258,4 +263,106 @@ export function smelterEffect(dimension, center) {
   });
   sound(dimension, "random.fizz", center);
   later(6, () => scatter(dimension, "minecraft:basic_flame_particle", center, { count: 14, radius: 5, height: 3 }));
+}
+
+/* ------------------------------------------------------------------ */
+/*  森・洞窟・湖・ネザー化                                             */
+/* ------------------------------------------------------------------ */
+
+/** 木の種類。地面ごとに変えると単調にならない */
+export const TREE_KINDS = [
+  { log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" },
+  { log: "minecraft:birch_log", leaves: "minecraft:birch_leaves" },
+  { log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" },
+];
+
+export function forestEffect(dimension, center) {
+  announce("§2🌳 森TNT: 木が一斉に育った 🌳§r");
+  if (!mayBreakBlocks()) return;
+
+  const base = blockPos(center);
+  let planted = 0;
+  for (let i = 0; i < 40 && planted < 18; i++) {
+    const spot = blockPos(randomInDisk(center, 12));
+    // 木が重ならないよう、少し間隔をあける
+    const kind = pick(TREE_KINDS);
+    if (plantTree(dimension, { x: spot.x, y: base.y, z: spot.z }, kind)) planted++;
+  }
+  // 下草
+  scanDisk(dimension, center, { radius: 12, layers: [0, 0], name: "forest" }, (dim, loc) => {
+    if (Math.random() > 0.25) return;
+    const below = blockAt(dim, { x: loc.x, y: loc.y - 1, z: loc.z });
+    if (!below) return;
+    if (MEADOW_SOIL.has(below.typeId)) setBlock(dim, { x: loc.x, y: loc.y - 1, z: loc.z }, "minecraft:grass_block");
+    trySetBlock(dim, loc, pick(MEADOW_PLANTS));
+  });
+  scatter(dimension, "minecraft:villager_happy", center, { count: 24, radius: 12, height: 3 });
+  sound(dimension, "item.bone_meal.use", center, { volume: 2 });
+}
+
+export function caveEffect(dimension, center) {
+  announce("§8🕳 洞窟TNT: 足元に洞窟が開いた 🕳§r");
+  if (!mayBreakBlocks()) return;
+
+  const base = blockPos(center);
+  const room = { x: base.x, y: base.y - 8, z: base.z };
+  // 広間と、そこから四方へ伸びる坑道
+  carveSphere(dimension, room, { radius: 8, priority: 4 });
+  carveTunnels(dimension, room, { width: 1, length: 20, priority: 4 });
+  // 降りるための穴
+  carveShaft(dimension, center, { radius: 1, top: 1, bottom: -8, priority: 4 });
+
+  // 松明を点けて、真っ暗にならないようにする
+  later(30, () => {
+    for (const dir of CARDINALS) {
+      for (let step = 4; step <= 20; step += 4) {
+        setIfEmpty(dimension, { x: room.x + dir.dx * step, y: room.y + 1, z: room.z + dir.dz * step }, "minecraft:torch");
+      }
+    }
+  });
+  sound(dimension, "random.explode", center, { pitch: 0.6 });
+}
+
+export function lakeEffect(dimension, center) {
+  announce("§3🌊 湖TNT: 水がたまった 🌊§r");
+  fillBasin(dimension, center, { radius: 10, depth: 5, liquid: "minecraft:water", priority: 4 });
+  // 縁に砂浜をつける
+  later(40, () => {
+    if (!mayBreakBlocks()) return;
+    scanDisk(dimension, { ...center, y: center.y - 1 }, { radius: 12, layers: [0, 0], name: "lake:beach" },
+      (dim, loc, cell) => {
+        if (Math.sqrt(cell.d2) < 9.5) return;
+        const block = blockAt(dim, loc);
+        if (!block || block.typeId === "minecraft:air" || block.typeId === "minecraft:water") return;
+        trySetBlock(dim, loc, ["minecraft:sand"]);
+      });
+  });
+  sound(dimension, "bucket.empty_water", center, { volume: 2 });
+}
+
+/** ネザー化で置き換わるもの */
+export const NETHER_GROUND = ["minecraft:netherrack", "minecraft:netherrack", "minecraft:soul_sand", "minecraft:magma"];
+
+export function netherEffect(dimension, center) {
+  announce("§4🔥 ネザー化TNT: 地面がネザーになった 🔥§r");
+  if (mayBreakBlocks()) {
+    scanDisk(dimension, center, { radius: 10, layers: [-2, 0], name: "nether" }, (dim, loc) => {
+      const block = blockAt(dim, loc);
+      if (!block || block.typeId === "minecraft:air") return;
+      if (PROTECTED_SET.has(block.typeId)) return;
+      trySetBlock(dim, loc, [pick(NETHER_GROUND)]);
+    });
+    // 溶岩溜まりをいくつか
+    later(30, () => {
+      for (let i = 0; i < 4; i++) {
+        const spot = blockPos(randomInDisk(center, 8));
+        fillBasin(dimension, { x: spot.x, y: Math.floor(center.y) - 1, z: spot.z }, {
+          radius: 2, depth: 2, liquid: "minecraft:lava", priority: 3,
+        });
+      }
+    });
+  }
+  igniteFires(dimension, center, 8, 0.15);
+  scatter(dimension, "minecraft:basic_flame_particle", center, { count: 24, radius: 10, height: 3 });
+  sound(dimension, "mob.ghast.moan", center, { volume: 2, pitch: 0.7 });
 }

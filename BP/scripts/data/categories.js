@@ -14,5 +14,8 @@ export const CATEGORIES = [
   {"id":"terrain","name":{"ja":"地形","en":"Terrain"},"icon":"§6▲"},
   {"id":"utility","name":{"ja":"便利","en":"Utility"},"icon":"§f✚"},
   {"id":"spectacle","name":{"ja":"演出","en":"Spectacle"},"icon":"§5✷"},
+  {"id":"construction","name":{"ja":"建築","en":"Construction"},"icon":"§e▤"},
+  {"id":"military","name":{"ja":"兵器","en":"Military"},"icon":"§8✦"},
+  {"id":"cosmic","name":{"ja":"宇宙","en":"Cosmic"},"icon":"§9✧"},
   {"id":"chaos","name":{"ja":"災厄","en":"Chaos"},"icon":"§4☠"},
 ];

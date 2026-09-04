@@ -87,4 +87,23 @@ export default [
     effect: "musicEffect",
     recipe: { ingredients: ["minecraft:tnt", "minecraft:noteblock"] },
   },
+  {
+    id: "aurora_tnt",
+    name: { ja: "オーロラTNT", en: "Aurora TNT" },
+    desc: { ja: "空に光のカーテンが揺れる。ただ綺麗なだけのTNT。", en: "A curtain of light sways overhead. Purely beautiful, nothing more." },
+    fuse: 100,
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#3ce0a8", emblem: "aurora", trail: "minecraft:endrod" },
+    effect: "auroraEffect",
+    recipe: { ingredients: ["manytnt:glow_tnt", "manytnt:rainbow_tnt", "minecraft:prismarine_crystals"] },
+  },
+  {
+    id: "snowfest_tnt",
+    name: { ja: "雪祭りTNT", en: "Snow Festival TNT" },
+    desc: { ja: "雪が降り積もり、雪だるまと雪玉が飛び交う。", en: "Snow piles up while snowmen and snowballs fly around." },
+    blast: { power: 0, breaks: false, fire: false },
+    visual: { color: "#dceef8", band: "#7c9cb4", emblem: "snowfest", trail: "minecraft:snowflake_particle" },
+    effect: "snowfestEffect",
+    recipe: { ingredients: ["manytnt:snowgolem_tnt", "manytnt:confetti_tnt", "minecraft:snow"] },
+  },
 ];

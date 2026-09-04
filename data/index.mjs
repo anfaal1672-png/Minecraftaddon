@@ -19,9 +19,15 @@ import creature from "./tnt/creature.mjs";
 import terrain from "./tnt/terrain.mjs";
 import utility from "./tnt/utility.mjs";
 import spectacle from "./tnt/spectacle.mjs";
+import construction from "./tnt/construction.mjs";
+import military from "./tnt/military.mjs";
+import cosmic from "./tnt/cosmic.mjs";
 import chaos from "./tnt/chaos.mjs";
 
-const SOURCES = { basic, nuclear, elemental, motion, creature, terrain, utility, spectacle, chaos };
+const SOURCES = {
+  basic, nuclear, elemental, motion, creature, terrain,
+  utility, spectacle, construction, military, cosmic, chaos,
+};
 
 export const NAMESPACE = "manytnt";
 

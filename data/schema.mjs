@@ -11,7 +11,7 @@
  *     blast:  { power, breaks, fire, underwater? },
  *     visual: { color, band?, ink?, style?, emblem, trail? },
  *     effect: "nukeEffect",                      爆発時に呼ぶ効果の名前 (省略可)
- *     traits: { launchUp?, gravityPull?, magnetPull?, gacha? },
+ *     traits: { launchUp?, launchArc?, gravityPull?, magnetPull?, gacha?, proximity? },
  *     recipe: { ingredients: [...], count? },
  *   }
  *
@@ -34,7 +34,14 @@ export const MAX_POWER = 100;
 /** レシピに置ける材料の数 (作業台は 3x3) */
 export const MAX_INGREDIENTS = 9;
 
-export const TRAIT_NAMES = ["launchUp", "gravityPull", "magnetPull", "gacha"];
+export const TRAIT_NAMES = [
+  "launchUp",    // 着火したら真上へ打ち上がる
+  "launchArc",   // 弧を描いて飛び、離れた場所に落ちる
+  "gravityPull", // 導火線の間、周りのエンティティを吸い寄せる
+  "magnetPull",  // 導火線の間、アイテムを吸い寄せる
+  "gacha",       // 着火の瞬間に別の種類を1つ引く
+  "proximity",   // 自分では爆発せず、近づいたものを検知して着火する
+];
 export const VISUAL_STYLES = ["rainbow"];
 
 function fail(errors, id, message) {

@@ -138,8 +138,46 @@ function isPowered(block) {
   }, false);
 }
 
+/** 地雷が反応する距離 (ブロック) */
+export const PROXIMITY_RANGE = 2.5;
+
 /**
- * ブロック側の定期処理。炎・溶岩・レッドストーンによる着火を拾う。
+ * 地雷TNT。近づいたものを検知して自分から着火する。
+ *
+ * 置いた本人がすぐ踏むと理不尽なので、置いてから少し経つまでは反応しない
+ * (ブロックの定期処理は10tickごとなので、最初の1回は必ず見送る)。
+ */
+const armedAt = new Map();
+const ARM_DELAY_TICKS = 40;
+
+function trippedByProximity(dimension, block) {
+  const cfg = tntConfig(block.typeId);
+  if (!cfg?.proximity) return false;
+
+  const key = `${dimension.id}:${block.location.x},${block.location.y},${block.location.z}`;
+  const now = attempt("ignition:tick", () => system.currentTick, 0) ?? 0;
+  const armed = armedAt.get(key);
+  if (armed === undefined) {
+    armedAt.set(key, now);
+    return false;
+  }
+  if (now - armed < ARM_DELAY_TICKS) return false;
+
+  const center = { x: block.location.x + 0.5, y: block.location.y + 0.5, z: block.location.z + 0.5 };
+  const nearby = attempt("ignition:proximity", () =>
+    dimension.getEntities({ location: center, maxDistance: PROXIMITY_RANGE }), []);
+  const tripped = nearby.some((ent) => ent.typeId !== "minecraft:item" && ent.typeId !== "minecraft:xp_orb");
+  if (tripped) armedAt.delete(key);
+  return tripped;
+}
+
+/** 地雷の待機状態を捨てる (テスト用) */
+export function clearMines() {
+  armedAt.clear();
+}
+
+/**
+ * ブロック側の定期処理。炎・溶岩・レッドストーン・地雷による着火を拾う。
  *
  * 火打石の着火をここ (onPlayerInteract) で拾わないのは、
  * それを登録するとブロック全体が「操作を持つブロック」扱いになり、
@@ -153,7 +191,8 @@ export function registerBlockComponent() {
         onTick(event) {
           const { block, dimension } = event;
           if (isReserved(dimension, block.location)) return;
-          if (hasFireOrLavaNeighbor(dimension, block.location) || isPowered(block)) {
+          if (hasFireOrLavaNeighbor(dimension, block.location) || isPowered(block) ||
+              trippedByProximity(dimension, block)) {
             ignite(dimension, block.location, block.typeId);
           }
         },

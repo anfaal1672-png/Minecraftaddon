@@ -50,6 +50,13 @@ export function spawnPrimed(dimension, center, cfg, { chained = false } = {}) {
 
   if (cfg.launchUp) {
     attempt("fuse:launch", () => entity.applyImpulse({ x: rand(-0.08, 0.08), y: 1.8, z: rand(-0.08, 0.08) }));
+  } else if (cfg.launchArc) {
+    // 弧を描いて飛ぶ。真上ではなく斜めに撃ち出すので、着弾は離れた場所になる
+    const angle = Math.random() * Math.PI * 2;
+    const speed = rand(0.9, 1.5);
+    attempt("fuse:launchArc", () =>
+      entity.applyImpulse({ x: Math.cos(angle) * speed, y: rand(1.4, 1.9), z: Math.sin(angle) * speed })
+    );
   }
 
   sound(dimension, "random.fuse", center);

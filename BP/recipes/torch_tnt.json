@@ -1,0 +1,34 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:torch_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:torch"
+      },
+      {
+        "item": "minecraft:torch"
+      },
+      {
+        "item": "minecraft:coal"
+      }
+    ],
+    "result": {
+      "item": "manytnt:torch_tnt",
+      "count": 1
+    }
+  }
+}

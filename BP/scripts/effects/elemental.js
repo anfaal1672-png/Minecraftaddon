@@ -4,7 +4,7 @@
 import { WeatherType } from "@minecraft/server";
 import { mayBreakBlocks } from "../core/settings.js";
 import { blockAt, setBlock, setIfEmpty, trySetBlock, WATER_BLOCKS } from "../lib/blocks.js";
-import { scanDisk, scanSphere } from "../lib/terrain.js";
+import { buildShell, carveSphere, scanDisk, scanSphere } from "../lib/terrain.js";
 import { burst, later, repeat, ring, scatter, sound } from "../lib/fx.js";
 import { applyEffects, entitiesNear, knockOutward, spawn } from "../lib/entities.js";
 import { randomInDisk } from "../lib/math.js";
@@ -243,4 +243,96 @@ export function darknessEffect(dimension, center) {
   }
   burst(dimension, "minecraft:basic_smoke_particle", center, { count: 18, radius: 3 });
   sound(dimension, "mob.wither.spawn", center, { volume: 0.6, pitch: 0.5 });
+}
+
+/* ------------------------------------------------------------------ */
+/*  酸・蒸気・砂・結晶                                                 */
+/* ------------------------------------------------------------------ */
+
+/** 酸で溶けたときに何になるか */
+export const ACID_MELT = {
+  "minecraft:stone": "minecraft:gravel",
+  "minecraft:cobblestone": "minecraft:gravel",
+  "minecraft:deepslate": "minecraft:cobbled_deepslate",
+  "minecraft:cobbled_deepslate": "minecraft:gravel",
+  "minecraft:andesite": "minecraft:gravel",
+  "minecraft:diorite": "minecraft:gravel",
+  "minecraft:granite": "minecraft:gravel",
+  "minecraft:gravel": "minecraft:sand",
+  "minecraft:sand": "minecraft:air",
+  "minecraft:grass_block": "minecraft:coarse_dirt",
+  "minecraft:dirt": "minecraft:coarse_dirt",
+};
+
+export function acidEffect(dimension, center) {
+  applyEffects(dimension, center, 8, [
+    ["minecraft:poison", 120, 1, true],
+    ["minecraft:weakness", 120, 0],
+  ]);
+  if (mayBreakBlocks()) {
+    // 上から順に溶けていくように、何回かに分けて浸食させる
+    repeat(4, 20, () => {
+      scanSphere(dimension, center, { radius: 6, name: "acid" }, (dim, loc) => {
+        const block = blockAt(dim, loc);
+        if (!block) return;
+        const melted = ACID_MELT[block.typeId];
+        if (melted && Math.random() < 0.35) block.setType(melted);
+      });
+      scatter(dimension, "minecraft:witchspell_emitter", center, { count: 12, radius: 6, height: 2 });
+    });
+  }
+  sound(dimension, "random.fizz", center, { volume: 2 });
+}
+
+export function steamEffect(dimension, center) {
+  // 水と熱がぶつかった勢いで、外へ強く押し出す
+  knockOutward(dimension, center, 12, 2.6, { lift: 0.9 });
+  applyEffects(dimension, center, 12, [["minecraft:slowness", 60, 1]]);
+  for (const ent of entitiesNear(dimension, center, 8, { items: false })) {
+    try {
+      ent.applyDamage(6, { cause: "entityExplosion" });
+    } catch (err) {}
+  }
+  repeat(10, 4, (i) => {
+    ring(dimension, "minecraft:basic_bubble_particle", center, 1 + i * 1.2, { count: 12 + i * 2, y: 1 });
+    scatter(dimension, "minecraft:campfire_smoke_particle", center, { count: 10, radius: 6, height: 4 });
+  });
+  sound(dimension, "random.fizz", center, { volume: 3, pitch: 0.7 });
+}
+
+export function sandstormEffect(dimension, center) {
+  applyEffects(dimension, center, 14, [
+    ["minecraft:blindness", 140, 0],
+    ["minecraft:slowness", 140, 1],
+  ]);
+  if (mayBreakBlocks()) {
+    scanDisk(dimension, center, { radius: 10, layers: [0, 1], name: "sandstorm" }, (dim, loc) => {
+      if (Math.random() > 0.35) return;
+      const block = blockAt(dim, loc);
+      if (!block || block.typeId !== "minecraft:air") return;
+      const below = blockAt(dim, { x: loc.x, y: loc.y - 1, z: loc.z });
+      if (below && below.typeId !== "minecraft:air") trySetBlock(dim, loc, ["minecraft:sand"]);
+    });
+  }
+  // 渦を巻く砂
+  repeat(20, 4, (i) => {
+    ring(dimension, "minecraft:basic_smoke_particle", center, 2 + (i % 8) * 1.4, {
+      count: 16, spin: i * 0.5, y: (i % 4) * 0.8,
+    });
+  });
+  sound(dimension, "ambient.weather.rain", center, { volume: 2, pitch: 0.6 });
+}
+
+export function crystalEffect(dimension, center) {
+  if (mayBreakBlocks()) {
+    const hollow = { x: center.x, y: center.y - 6, z: center.z };
+    // 方解石の殻 → 内側をアメジストに → 中を空洞にする、の順で晶洞になる
+    buildShell(dimension, hollow, { radius: 6, thickness: 1, candidates: ["minecraft:calcite"], priority: 4 });
+    later(20, () => {
+      buildShell(dimension, hollow, { radius: 5, thickness: 1, candidates: ["minecraft:amethyst_block"], priority: 4 });
+      later(20, () => carveSphere(dimension, hollow, { radius: 4, priority: 4 }));
+    });
+  }
+  scatter(dimension, "minecraft:endrod", center, { count: 20, radius: 4, height: 3 });
+  sound(dimension, "random.glass", center, { pitch: 1.6 });
 }

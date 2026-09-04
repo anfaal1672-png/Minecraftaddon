@@ -13,6 +13,9 @@ export const CATEGORIES = [
   { id: "terrain",   name: { ja: "地形",   en: "Terrain" },    icon: "§6▲", file: "terrain" },
   { id: "utility",   name: { ja: "便利",   en: "Utility" },    icon: "§f✚", file: "utility" },
   { id: "spectacle", name: { ja: "演出",   en: "Spectacle" },  icon: "§5✷", file: "spectacle" },
+  { id: "construction", name: { ja: "建築", en: "Construction" }, icon: "§e▤", file: "construction" },
+  { id: "military",  name: { ja: "兵器",   en: "Military" },   icon: "§8✦", file: "military" },
+  { id: "cosmic",    name: { ja: "宇宙",   en: "Cosmic" },     icon: "§9✧", file: "cosmic" },
   { id: "chaos",     name: { ja: "災厄",   en: "Chaos" },      icon: "§4☠", file: "chaos" },
 ];
 

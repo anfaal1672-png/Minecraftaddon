@@ -1,0 +1,14 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "manytnt:steam_tnt",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

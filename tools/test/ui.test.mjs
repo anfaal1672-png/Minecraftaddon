@@ -6,7 +6,7 @@ import { detonate, freshWorld, placeTnt, solidGround } from "./setup.mjs";
 import { SETTINGS, get, load, mayBreakBlocks, scaledRadius, set, toggle } from "../../BP/scripts/core/settings.js";
 import { distinctUsed, getStats, recordExplosion, topUsed } from "../../BP/scripts/core/stats.js";
 import { openCatalog, openMainMenu, openSettings, powerLabel, recipeLines } from "../../BP/scripts/core/menu.js";
-import { ALL_CONFIGS, TNT_COUNT } from "../../BP/scripts/core/registry.js";
+import { ALL_CONFIGS, CATEGORIES, TNT_COUNT } from "../../BP/scripts/core/registry.js";
 import { announce } from "../../BP/scripts/core/chat.js";
 
 suite("設定", () => {
@@ -133,8 +133,8 @@ suite("画面", () => {
     freshWorld();
     queueResponses({ canceled: true, cancelationReason: "UserClosed" });
     await openCatalog(player());
-    // カテゴリ + もどる
-    expect.equal(shown[0].buttons.length, 10);
+    // カテゴリの数 + 「もどる」
+    expect.equal(shown[0].buttons.length, CATEGORIES.length + 1);
   });
 
   test("カテゴリを選ぶと詳細まで開ける", async () => {

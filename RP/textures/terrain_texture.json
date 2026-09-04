@@ -133,6 +133,30 @@
     "manytnt:scorched_tnt_side": {
       "textures": "textures/blocks/scorched_tnt_side"
     },
+    "manytnt:acid_tnt_top": {
+      "textures": "textures/blocks/acid_tnt_top"
+    },
+    "manytnt:acid_tnt_side": {
+      "textures": "textures/blocks/acid_tnt_side"
+    },
+    "manytnt:steam_tnt_top": {
+      "textures": "textures/blocks/steam_tnt_top"
+    },
+    "manytnt:steam_tnt_side": {
+      "textures": "textures/blocks/steam_tnt_side"
+    },
+    "manytnt:sandstorm_tnt_top": {
+      "textures": "textures/blocks/sandstorm_tnt_top"
+    },
+    "manytnt:sandstorm_tnt_side": {
+      "textures": "textures/blocks/sandstorm_tnt_side"
+    },
+    "manytnt:crystal_tnt_top": {
+      "textures": "textures/blocks/crystal_tnt_top"
+    },
+    "manytnt:crystal_tnt_side": {
+      "textures": "textures/blocks/crystal_tnt_side"
+    },
     "manytnt:gravity_tnt_top": {
       "textures": "textures/blocks/gravity_tnt_top"
     },
@@ -199,6 +223,18 @@
     "manytnt:chorus_tnt_side": {
       "textures": "textures/blocks/chorus_tnt_side"
     },
+    "manytnt:elevator_tnt_top": {
+      "textures": "textures/blocks/elevator_tnt_top"
+    },
+    "manytnt:elevator_tnt_side": {
+      "textures": "textures/blocks/elevator_tnt_side"
+    },
+    "manytnt:dash_tnt_top": {
+      "textures": "textures/blocks/dash_tnt_top"
+    },
+    "manytnt:dash_tnt_side": {
+      "textures": "textures/blocks/dash_tnt_side"
+    },
     "manytnt:summon_tnt_top": {
       "textures": "textures/blocks/summon_tnt_top"
     },
@@ -234,6 +270,30 @@
     },
     "manytnt:animal_tnt_side": {
       "textures": "textures/blocks/animal_tnt_side"
+    },
+    "manytnt:cat_tnt_top": {
+      "textures": "textures/blocks/cat_tnt_top"
+    },
+    "manytnt:cat_tnt_side": {
+      "textures": "textures/blocks/cat_tnt_side"
+    },
+    "manytnt:villager_tnt_top": {
+      "textures": "textures/blocks/villager_tnt_top"
+    },
+    "manytnt:villager_tnt_side": {
+      "textures": "textures/blocks/villager_tnt_side"
+    },
+    "manytnt:golem_tnt_top": {
+      "textures": "textures/blocks/golem_tnt_top"
+    },
+    "manytnt:golem_tnt_side": {
+      "textures": "textures/blocks/golem_tnt_side"
+    },
+    "manytnt:phantom_tnt_top": {
+      "textures": "textures/blocks/phantom_tnt_top"
+    },
+    "manytnt:phantom_tnt_side": {
+      "textures": "textures/blocks/phantom_tnt_side"
     },
     "manytnt:earthquake_tnt_top": {
       "textures": "textures/blocks/earthquake_tnt_top"
@@ -295,6 +355,30 @@
     "manytnt:obsidian_tnt_side": {
       "textures": "textures/blocks/obsidian_tnt_side"
     },
+    "manytnt:forest_tnt_top": {
+      "textures": "textures/blocks/forest_tnt_top"
+    },
+    "manytnt:forest_tnt_side": {
+      "textures": "textures/blocks/forest_tnt_side"
+    },
+    "manytnt:cave_tnt_top": {
+      "textures": "textures/blocks/cave_tnt_top"
+    },
+    "manytnt:cave_tnt_side": {
+      "textures": "textures/blocks/cave_tnt_side"
+    },
+    "manytnt:lake_tnt_top": {
+      "textures": "textures/blocks/lake_tnt_top"
+    },
+    "manytnt:lake_tnt_side": {
+      "textures": "textures/blocks/lake_tnt_side"
+    },
+    "manytnt:nether_tnt_top": {
+      "textures": "textures/blocks/nether_tnt_top"
+    },
+    "manytnt:nether_tnt_side": {
+      "textures": "textures/blocks/nether_tnt_side"
+    },
     "manytnt:heal_tnt_top": {
       "textures": "textures/blocks/heal_tnt_top"
     },
@@ -355,6 +439,30 @@
     "manytnt:vacuum_tnt_side": {
       "textures": "textures/blocks/vacuum_tnt_side"
     },
+    "manytnt:supply_tnt_top": {
+      "textures": "textures/blocks/supply_tnt_top"
+    },
+    "manytnt:supply_tnt_side": {
+      "textures": "textures/blocks/supply_tnt_side"
+    },
+    "manytnt:torch_tnt_top": {
+      "textures": "textures/blocks/torch_tnt_top"
+    },
+    "manytnt:torch_tnt_side": {
+      "textures": "textures/blocks/torch_tnt_side"
+    },
+    "manytnt:beacon_tnt_top": {
+      "textures": "textures/blocks/beacon_tnt_top"
+    },
+    "manytnt:beacon_tnt_side": {
+      "textures": "textures/blocks/beacon_tnt_side"
+    },
+    "manytnt:survey_tnt_top": {
+      "textures": "textures/blocks/survey_tnt_top"
+    },
+    "manytnt:survey_tnt_side": {
+      "textures": "textures/blocks/survey_tnt_side"
+    },
     "manytnt:confetti_tnt_top": {
       "textures": "textures/blocks/confetti_tnt_top"
     },
@@ -408,6 +516,186 @@
     },
     "manytnt:music_tnt_side": {
       "textures": "textures/blocks/music_tnt_side"
+    },
+    "manytnt:aurora_tnt_top": {
+      "textures": "textures/blocks/aurora_tnt_top"
+    },
+    "manytnt:aurora_tnt_side": {
+      "textures": "textures/blocks/aurora_tnt_side"
+    },
+    "manytnt:snowfest_tnt_top": {
+      "textures": "textures/blocks/snowfest_tnt_top"
+    },
+    "manytnt:snowfest_tnt_side": {
+      "textures": "textures/blocks/snowfest_tnt_side"
+    },
+    "manytnt:tunnel_tnt_top": {
+      "textures": "textures/blocks/tunnel_tnt_top"
+    },
+    "manytnt:tunnel_tnt_side": {
+      "textures": "textures/blocks/tunnel_tnt_side"
+    },
+    "manytnt:flatten_tnt_top": {
+      "textures": "textures/blocks/flatten_tnt_top"
+    },
+    "manytnt:flatten_tnt_side": {
+      "textures": "textures/blocks/flatten_tnt_side"
+    },
+    "manytnt:wall_tnt_top": {
+      "textures": "textures/blocks/wall_tnt_top"
+    },
+    "manytnt:wall_tnt_side": {
+      "textures": "textures/blocks/wall_tnt_side"
+    },
+    "manytnt:tower_tnt_top": {
+      "textures": "textures/blocks/tower_tnt_top"
+    },
+    "manytnt:tower_tnt_side": {
+      "textures": "textures/blocks/tower_tnt_side"
+    },
+    "manytnt:bridge_tnt_top": {
+      "textures": "textures/blocks/bridge_tnt_top"
+    },
+    "manytnt:bridge_tnt_side": {
+      "textures": "textures/blocks/bridge_tnt_side"
+    },
+    "manytnt:shelter_tnt_top": {
+      "textures": "textures/blocks/shelter_tnt_top"
+    },
+    "manytnt:shelter_tnt_side": {
+      "textures": "textures/blocks/shelter_tnt_side"
+    },
+    "manytnt:quarry_tnt_top": {
+      "textures": "textures/blocks/quarry_tnt_top"
+    },
+    "manytnt:quarry_tnt_side": {
+      "textures": "textures/blocks/quarry_tnt_side"
+    },
+    "manytnt:stairway_tnt_top": {
+      "textures": "textures/blocks/stairway_tnt_top"
+    },
+    "manytnt:stairway_tnt_side": {
+      "textures": "textures/blocks/stairway_tnt_side"
+    },
+    "manytnt:pave_tnt_top": {
+      "textures": "textures/blocks/pave_tnt_top"
+    },
+    "manytnt:pave_tnt_side": {
+      "textures": "textures/blocks/pave_tnt_side"
+    },
+    "manytnt:scaffold_tnt_top": {
+      "textures": "textures/blocks/scaffold_tnt_top"
+    },
+    "manytnt:scaffold_tnt_side": {
+      "textures": "textures/blocks/scaffold_tnt_side"
+    },
+    "manytnt:cluster_tnt_top": {
+      "textures": "textures/blocks/cluster_tnt_top"
+    },
+    "manytnt:cluster_tnt_side": {
+      "textures": "textures/blocks/cluster_tnt_side"
+    },
+    "manytnt:napalm_tnt_top": {
+      "textures": "textures/blocks/napalm_tnt_top"
+    },
+    "manytnt:napalm_tnt_side": {
+      "textures": "textures/blocks/napalm_tnt_side"
+    },
+    "manytnt:mine_tnt_top": {
+      "textures": "textures/blocks/mine_tnt_top"
+    },
+    "manytnt:mine_tnt_side": {
+      "textures": "textures/blocks/mine_tnt_side"
+    },
+    "manytnt:missile_tnt_top": {
+      "textures": "textures/blocks/missile_tnt_top"
+    },
+    "manytnt:missile_tnt_side": {
+      "textures": "textures/blocks/missile_tnt_side"
+    },
+    "manytnt:shrapnel_tnt_top": {
+      "textures": "textures/blocks/shrapnel_tnt_top"
+    },
+    "manytnt:shrapnel_tnt_side": {
+      "textures": "textures/blocks/shrapnel_tnt_side"
+    },
+    "manytnt:emp_tnt_top": {
+      "textures": "textures/blocks/emp_tnt_top"
+    },
+    "manytnt:emp_tnt_side": {
+      "textures": "textures/blocks/emp_tnt_side"
+    },
+    "manytnt:bunker_tnt_top": {
+      "textures": "textures/blocks/bunker_tnt_top"
+    },
+    "manytnt:bunker_tnt_side": {
+      "textures": "textures/blocks/bunker_tnt_side"
+    },
+    "manytnt:smoke_tnt_top": {
+      "textures": "textures/blocks/smoke_tnt_top"
+    },
+    "manytnt:smoke_tnt_side": {
+      "textures": "textures/blocks/smoke_tnt_side"
+    },
+    "manytnt:gas_tnt_top": {
+      "textures": "textures/blocks/gas_tnt_top"
+    },
+    "manytnt:gas_tnt_side": {
+      "textures": "textures/blocks/gas_tnt_side"
+    },
+    "manytnt:flak_tnt_top": {
+      "textures": "textures/blocks/flak_tnt_top"
+    },
+    "manytnt:flak_tnt_side": {
+      "textures": "textures/blocks/flak_tnt_side"
+    },
+    "manytnt:supernova_tnt_top": {
+      "textures": "textures/blocks/supernova_tnt_top"
+    },
+    "manytnt:supernova_tnt_side": {
+      "textures": "textures/blocks/supernova_tnt_side"
+    },
+    "manytnt:neutron_tnt_top": {
+      "textures": "textures/blocks/neutron_tnt_top"
+    },
+    "manytnt:neutron_tnt_side": {
+      "textures": "textures/blocks/neutron_tnt_side"
+    },
+    "manytnt:wormhole_tnt_top": {
+      "textures": "textures/blocks/wormhole_tnt_top"
+    },
+    "manytnt:wormhole_tnt_side": {
+      "textures": "textures/blocks/wormhole_tnt_side"
+    },
+    "manytnt:galaxy_tnt_top": {
+      "textures": "textures/blocks/galaxy_tnt_top"
+    },
+    "manytnt:galaxy_tnt_side": {
+      "textures": "textures/blocks/galaxy_tnt_side"
+    },
+    "manytnt:comet_tnt_top": {
+      "textures": "textures/blocks/comet_tnt_top"
+    },
+    "manytnt:comet_tnt_side": {
+      "textures": "textures/blocks/comet_tnt_side"
+    },
+    "manytnt:solarflare_tnt_top": {
+      "textures": "textures/blocks/solarflare_tnt_top"
+    },
+    "manytnt:solarflare_tnt_side": {
+      "textures": "textures/blocks/solarflare_tnt_side"
+    },
+    "manytnt:nebula_tnt_top": {
+      "textures": "textures/blocks/nebula_tnt_top"
+    },
+    "manytnt:nebula_tnt_side": {
+      "textures": "textures/blocks/nebula_tnt_side"
+    },
+    "manytnt:bigbang_tnt_top": {
+      "textures": "textures/blocks/bigbang_tnt_top"
+    },
+    "manytnt:bigbang_tnt_side": {
+      "textures": "textures/blocks/bigbang_tnt_side"
     },
     "manytnt:singularity_tnt_top": {
       "textures": "textures/blocks/singularity_tnt_top"

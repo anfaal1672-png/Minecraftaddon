@@ -4,6 +4,7 @@
 import { announce } from "../core/chat.js";
 import { mayBreakBlocks } from "../core/settings.js";
 import { blockAt, trySetBlock } from "../lib/blocks.js";
+import { scanDisk } from "../lib/terrain.js";
 import { diskCells } from "../lib/shapes.js";
 import { applyEffects, spawn } from "../lib/entities.js";
 import { burst, later, particle, repeat, ring, scatter, sound } from "../lib/fx.js";
@@ -169,4 +170,58 @@ export function rainbowEffect(dimension, center) {
     later(i * 2, () => ring(dimension, "minecraft:totem_particle", center, 1 + i, { count: 10 + i * 3, y: i * 0.4 }));
   }
   rollRandomEffect(dimension, center, RAINBOW_POOL, "§d虹TNT: ");
+}
+
+/* ------------------------------------------------------------------ */
+/*  オーロラ・雪祭り                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * オーロラTNT。空に揺れる光のカーテン。害は無い。
+ * 帯を波打たせるために、位相をずらしたサインで高さを決めている。
+ */
+export function auroraEffect(dimension, center) {
+  announce("§b✧ オーロラTNT: 空に光のカーテンが揺れている ✧§r");
+  sound(dimension, "beacon.power", center, { volume: 2, pitch: 1.2 });
+
+  const CURTAIN_WIDTH = 24;
+  const COLORS = ["minecraft:endrod", "minecraft:totem_particle", "minecraft:villager_happy"];
+
+  repeat(60, 3, (frame) => {
+    for (let i = -CURTAIN_WIDTH; i <= CURTAIN_WIDTH; i += 2) {
+      // 横に流れる波。frame を足すことでカーテンが揺れて見える
+      const wave = Math.sin(i * 0.25 + frame * 0.2) * 3;
+      const height = 18 + wave;
+      for (let h = 0; h < 5; h++) {
+        particle(dimension, COLORS[(h + frame) % COLORS.length], {
+          x: center.x + i,
+          y: center.y + height + h * 0.8,
+          z: center.z + Math.sin(i * 0.15 + frame * 0.1) * 6,
+        });
+      }
+    }
+  });
+  applyEffects(dimension, center, 20, [["minecraft:night_vision", 900, 0]]);
+}
+
+export function snowfestEffect(dimension, center) {
+  announce("§f❄ 雪祭りTNT: 雪が降ってきた ❄§r");
+  sound(dimension, "random.glass", center, { pitch: 1.6 });
+
+  // 積もる雪
+  if (mayBreakBlocks()) {
+    scanDisk(dimension, center, { radius: 10, layers: [0, 0], name: "snowfest" }, (dim, loc) => {
+      if (Math.random() > 0.6) return;
+      const block = blockAt(dim, loc);
+      if (!block || block.typeId !== "minecraft:air") return;
+      const below = blockAt(dim, { x: loc.x, y: loc.y - 1, z: loc.z });
+      if (below && below.typeId !== "minecraft:air") trySetBlock(dim, loc, ["minecraft:snow_layer"]);
+    });
+  }
+  // 雪だるまと降り続ける雪
+  for (let i = 0; i < 4; i++) later(i * 6, () => spawn(dimension, "minecraft:snow_golem", randomInDisk(center, 4)));
+  repeat(30, 4, () => scatter(dimension, "minecraft:snowflake_particle", { ...center, y: center.y + 6 }, {
+    count: 20, radius: 10, height: 4,
+  }));
+  applyEffects(dimension, center, 10, [["minecraft:jump_boost", 200, 1]]);
 }

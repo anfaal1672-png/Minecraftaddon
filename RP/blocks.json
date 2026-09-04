@@ -63,6 +63,18 @@
   "manytnt:scorched_tnt": {
     "sound": "grass"
   },
+  "manytnt:acid_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:steam_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:sandstorm_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:crystal_tnt": {
+    "sound": "grass"
+  },
   "manytnt:gravity_tnt": {
     "sound": "grass"
   },
@@ -96,6 +108,12 @@
   "manytnt:chorus_tnt": {
     "sound": "grass"
   },
+  "manytnt:elevator_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:dash_tnt": {
+    "sound": "grass"
+  },
   "manytnt:summon_tnt": {
     "sound": "grass"
   },
@@ -112,6 +130,18 @@
     "sound": "grass"
   },
   "manytnt:animal_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:cat_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:villager_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:golem_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:phantom_tnt": {
     "sound": "grass"
   },
   "manytnt:earthquake_tnt": {
@@ -144,6 +174,18 @@
   "manytnt:obsidian_tnt": {
     "sound": "grass"
   },
+  "manytnt:forest_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:cave_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:lake_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:nether_tnt": {
+    "sound": "grass"
+  },
   "manytnt:heal_tnt": {
     "sound": "grass"
   },
@@ -174,6 +216,18 @@
   "manytnt:vacuum_tnt": {
     "sound": "grass"
   },
+  "manytnt:supply_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:torch_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:beacon_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:survey_tnt": {
+    "sound": "grass"
+  },
   "manytnt:confetti_tnt": {
     "sound": "grass"
   },
@@ -199,6 +253,96 @@
     "sound": "grass"
   },
   "manytnt:music_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:aurora_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:snowfest_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:tunnel_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:flatten_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:wall_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:tower_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:bridge_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:shelter_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:quarry_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:stairway_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:pave_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:scaffold_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:cluster_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:napalm_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:mine_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:missile_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:shrapnel_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:emp_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:bunker_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:smoke_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:gas_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:flak_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:supernova_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:neutron_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:wormhole_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:galaxy_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:comet_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:solarflare_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:nebula_tnt": {
+    "sound": "grass"
+  },
+  "manytnt:bigbang_tnt": {
     "sound": "grass"
   },
   "manytnt:singularity_tnt": {

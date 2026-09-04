@@ -12,5 +12,6 @@ await import("./test/ignition.test.mjs");
 await import("./test/terrain.test.mjs");
 await import("./test/effects.test.mjs");
 await import("./test/ui.test.mjs");
+await import("./test/expansion.test.mjs");
 
 process.exit((await runAll()) ? 0 : 1);
