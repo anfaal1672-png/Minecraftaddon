@@ -6,7 +6,8 @@
  *   core/registry.js    TNTの一覧と設定 (data/tnt-table.js から作られる)
  *   core/settings.js    ワールドごとの設定とゲームルールの尊重
  *   core/jobs.js        重い処理を捌く共有のジョブ置き場
- *   core/ignition.js    着火。火打石・炎・レッドストーン・矢・遠隔起爆の入口
+ *   core/ignition.js    着火。火打石・炎・レッドストーン・矢の入口
+ *   core/dispenser.js   ディスペンサーからのTNT射出
  *   core/fuse.js        導火線が燃えている間の追跡と演出
  *   core/detonation.js  爆発の横取りと、威力・効果の適用
  *   core/chain.js       連鎖爆発
@@ -21,6 +22,7 @@ import { world } from "@minecraft/server";
 import { attempt } from "./core/log.js";
 import { registerChainCapReset } from "./core/chain.js";
 import { registerCommands } from "./core/commands.js";
+import { registerDispenser } from "./core/dispenser.js";
 import { registerExplosionHook } from "./core/detonation.js";
 import { registerFuseLoop } from "./core/fuse.js";
 import { registerIgnitionSources } from "./core/ignition.js";
@@ -40,6 +42,7 @@ attempt("main:worldLoad", () =>
 );
 
 registerIgnitionSources();
+registerDispenser();
 registerFuseLoop();
 registerExplosionHook();
 registerChainCapReset();

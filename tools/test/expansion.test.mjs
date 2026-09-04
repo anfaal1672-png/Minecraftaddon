@@ -410,3 +410,62 @@ suite("TNT以外の追加物", () => {
     expect.ok(dim.getBlock({ x: 3, y: 64, z: 0 }).isAir, "周りが掘れていない");
   });
 });
+
+suite("ディスペンサー", () => {
+  /** ディスペンサーを置いて、その正面にアイテムが湧いた状況を作る */
+  function dispenseFrom(dim, dispenserAt, facing, itemId) {
+    dim._setBlock(dispenserAt.x, dispenserAt.y, dispenserAt.z, "minecraft:dispenser", { facing_direction: facing });
+    const offset = { 0: [0, -1, 0], 1: [0, 1, 0], 2: [0, 0, -1], 3: [0, 0, 1], 4: [-1, 0, 0], 5: [1, 0, 0] }[facing];
+    const muzzle = {
+      x: dispenserAt.x + offset[0],
+      y: dispenserAt.y + offset[1],
+      z: dispenserAt.z + offset[2],
+    };
+    const item = dim.spawnEntity("minecraft:item", { x: muzzle.x + 0.5, y: muzzle.y + 0.5, z: muzzle.z + 0.5 });
+    item.components = { "minecraft:item": { itemStack: { typeId: itemId } } };
+    world.afterEvents.entitySpawn.emit({ entity: item, cause: "Spawned" });
+    return { item, muzzle };
+  }
+
+  test("TNTを入れると、火の点いたTNTが撃ち出される", () => {
+    const dim = freshWorld();
+    const { item } = dispenseFrom(dim, { x: 0, y: 64, z: 0 }, 5, "manytnt:mega_tnt");
+    expect.equal(primedEntities(dim).length, 1, "起爆中のTNTが出ていない");
+    expect.ok(item.removed, "アイテムが残っている");
+  });
+
+  test("向きが合っていなければ何もしない", () => {
+    const dim = freshWorld();
+    // 東を向いたディスペンサーの、西側にアイテムを湧かせる
+    dim._setBlock(0, 64, 0, "minecraft:dispenser", { facing_direction: 5 });
+    const item = dim.spawnEntity("minecraft:item", { x: -1.5, y: 64.5, z: 0.5 });
+    item.components = { "minecraft:item": { itemStack: { typeId: "manytnt:mega_tnt" } } };
+    world.afterEvents.entitySpawn.emit({ entity: item, cause: "Spawned" });
+    expect.equal(primedEntities(dim).length, 0, "向いていない方向へ撃ち出している");
+    expect.ok(!item.removed, "関係ないアイテムを消している");
+  });
+
+  test("手で落としたTNTは撃ち出されない", () => {
+    const dim = freshWorld();
+    const item = dim.spawnEntity("minecraft:item", { x: 0.5, y: 64.5, z: 0.5 });
+    item.components = { "minecraft:item": { itemStack: { typeId: "manytnt:mega_tnt" } } };
+    world.afterEvents.entitySpawn.emit({ entity: item, cause: "Spawned" });
+    expect.equal(primedEntities(dim).length, 0, "落としただけで爆発している");
+    expect.ok(!item.removed, "落としたアイテムが消えた");
+  });
+
+  test("TNT以外のアイテムには手を出さない", () => {
+    const dim = freshWorld();
+    const { item } = dispenseFrom(dim, { x: 0, y: 64, z: 0 }, 5, "minecraft:arrow");
+    expect.equal(primedEntities(dim).length, 0);
+    expect.ok(!item.removed, "関係ないアイテムを消している");
+  });
+
+  test("6方向すべてで撃ち出せる", () => {
+    for (const facing of [0, 1, 2, 3, 4, 5]) {
+      const dim = freshWorld();
+      dispenseFrom(dim, { x: 0, y: 64, z: 0 }, facing, "manytnt:mini_tnt");
+      expect.equal(primedEntities(dim).length, 1, `facing_direction ${facing} で撃ち出せない`);
+    }
+  });
+});

@@ -9,6 +9,7 @@
  *   4. JSON が壊れていないか
  *   5. 使っている Minecraft の API が実在するか
  *   6. 効果音とパーティクルの名前が実在するか
+ *   7. コンポーネント名が Mojang の正式なスキーマに載っているか
  */
 import fs from "node:fs";
 import { TNT_DEFS, checkDefs, fuseLengths } from "../data/index.mjs";
@@ -21,6 +22,7 @@ import { generateEntity } from "./gen/entity.mjs";
 import { findEffectFunctions, generateScripts } from "./gen/scripts.mjs";
 import { checkApiUsage } from "./check-api.mjs";
 import { checkAssetNames } from "./check-assets.mjs";
+import { checkAgainstSchemas } from "./check-schema.mjs";
 
 const problems = [];
 const notes = [];
@@ -197,6 +199,16 @@ if (assets.skipped) notes.push(assets.reason);
 else {
   for (const problem of assets.problems) fail(problem);
   notes.push(`効果音 ${assets.sounds} 件 / パーティクル ${assets.particles} 件と突き合わせた`);
+}
+
+/* ------------------------------------------------------------------ */
+/*  7. 正式なスキーマとの突き合わせ                                    */
+/* ------------------------------------------------------------------ */
+const schemas = checkAgainstSchemas();
+if (schemas.skipped) notes.push(schemas.reason);
+else {
+  for (const problem of schemas.problems) fail(`スキーマ: ${problem}`);
+  for (const line of schemas.used) notes.push(line);
 }
 
 /* ------------------------------------------------------------------ */

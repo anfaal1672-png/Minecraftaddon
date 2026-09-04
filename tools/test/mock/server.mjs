@@ -519,6 +519,7 @@ export const world = {
     playerInteractWithBlock: new Signal(),
     projectileHitBlock: new Signal(),
     projectileHitEntity: new Signal(),
+    entitySpawn: new Signal(),
     itemUse: new Signal(),
   },
 

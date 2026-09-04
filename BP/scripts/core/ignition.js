@@ -209,7 +209,9 @@ export function registerBlockComponent() {
           sound(event.dimension, "dig.grass", event.block.location);
         },
 
-        onPlayerDestroy(event) {
+        // 破壊時のコールバックは onPlayerBreak。
+        // onPlayerDestroy という名前は存在せず、書いても呼ばれない。
+        onPlayerBreak(event) {
           sound(event.dimension, "dig.grass", event.block.location);
         },
       });
@@ -234,6 +236,8 @@ export function registerFlintAndSteel() {
       attempt("ignition:durability", () => {
         if (mainhand?.hasItem() && mainhand.typeId === "minecraft:flint_and_steel") mainhand.damageDurability(1);
       });
+      // 本家のTNTに火を点けたときと同じ音
+      sound(player.dimension, "fire.ignite", block.location);
       ignite(player.dimension, block.location, block.typeId);
     })
   );
