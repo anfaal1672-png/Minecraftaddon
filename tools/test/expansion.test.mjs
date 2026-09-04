@@ -15,7 +15,7 @@ import { clearTimers, pendingTimers, toolList, useBlastRod, useTimer } from "../
 import { clearFuses, lightFuse } from "../../BP/scripts/gear/blocks.js";
 import { THROWABLES, TOOLS } from "../../BP/scripts/data/gear-table.js";
 import { applyEffects, damageArea, knockOutward } from "../../BP/scripts/lib/entities.js";
-import { clearMines, PROXIMITY_RANGE } from "../../BP/scripts/core/ignition.js";
+import { clearMines, ignite, isReserved, PROXIMITY_RANGE } from "../../BP/scripts/core/ignition.js";
 import {
   buildBridges, buildShelter, buildWall, carveBox, carveSphere, carveTunnels,
   fillBasin, flattenArea, raiseScaffold, spiralStairs,
@@ -497,5 +497,61 @@ suite("見た目をバニラに合わせる", () => {
       b: "variable.is_flashing ? 1.0 : this",
       a: "variable.is_flashing ? 0.5 : this",
     });
+  });
+});
+
+suite("TNTが消えないこと", () => {
+  test("火で燃え尽きる設定になっていない", () => {
+    /*
+     * 公式の説明:
+     *   「catch_chance_modifier が 0 より大きい場合、火はブロックが壊れるまで
+     *     燃え続ける (destroy_chance_modifier が 0 なら燃え続けたままになる)」
+     * つまり destroy_chance_modifier を 0 以外にすると、
+     * 火の点いたTNTブロックは着火ではなく燃え尽きて消える。
+     */
+    for (const id of ["mega_tnt", "nuke_tnt", "mini_tnt"]) {
+      const flammable = readJson(`BP/blocks/${id}.json`)["minecraft:block"]
+        .components["minecraft:flammable"];
+      expect.equal(flammable.destroy_chance_modifier, 0, `${id} が燃え尽きる設定になっている`);
+      expect.atLeast(flammable.catch_chance_modifier, 1, `${id} に火が燃え移らない`);
+    }
+  });
+
+  test("起爆中のTNTを出せなかったら、ブロックを元に戻す", () => {
+    // これをしないと「火を点けたらTNTが消えただけ」になる
+    const dim = freshWorld();
+    const loc = { x: 0, y: 64, z: 0 };
+    placeTnt(dim, loc, "mega_tnt");
+
+    // エンティティを湧かせられない状況を作る
+    const original = dim.spawnEntity;
+    dim.spawnEntity = () => {
+      throw new Error("湧かせられない");
+    };
+    try {
+      ignite(dim, loc, "manytnt:mega_tnt");
+    } finally {
+      dim.spawnEntity = original;
+    }
+
+    expect.equal(dim.getBlock(loc).typeId, "manytnt:mega_tnt", "TNTが消えたままになっている");
+    expect.equal(isReserved(dim, loc), false, "着火の予約が残っている");
+  });
+
+  test("戻した後は、もう一度着火できる", () => {
+    const dim = freshWorld();
+    const loc = { x: 0, y: 64, z: 0 };
+    placeTnt(dim, loc, "mega_tnt");
+    const original = dim.spawnEntity;
+    dim.spawnEntity = () => {
+      throw new Error("湧かせられない");
+    };
+    try {
+      ignite(dim, loc, "manytnt:mega_tnt");
+    } finally {
+      dim.spawnEntity = original;
+    }
+    expect.equal(ignite(dim, loc, "manytnt:mega_tnt"), true, "戻したのに着火できない");
+    expect.equal(primedEntities(dim).length, 1);
   });
 });

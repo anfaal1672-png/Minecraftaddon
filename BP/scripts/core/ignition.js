@@ -10,12 +10,14 @@
  * これに加えて、このアドオンの遠隔起爆装置でも着火できる。
  */
 import { EquipmentSlot, system, world } from "@minecraft/server";
-import { attempt } from "./log.js";
+import { attempt, note } from "./log.js";
 import { announce } from "./chat.js";
 import { spawnPrimed } from "./fuse.js";
 import { gachaCandidates, isTnt, tntConfig } from "./registry.js";
 import { pick } from "../lib/math.js";
 import { sound } from "../lib/fx.js";
+
+export const FLINT_AND_STEEL = "minecraft:flint_and_steel";
 
 export const FIRE_NEIGHBORS = new Set([
   "minecraft:fire",
@@ -104,6 +106,12 @@ export function ignite(dimension, blockLoc, typeId, { chained = false, key = nul
   const effective = cfg.isGacha ? drawGacha(dimension, center, cfg) : cfg;
 
   const entity = spawnPrimed(dimension, center, effective, { chained });
+  if (!entity) {
+    // 起爆中のTNTを出せなかった。ブロックはもう消してしまっているので、
+    // このままだと「火を点けたらTNTが消えただけ」になる。元に戻す。
+    note("ignition:spawnFailed", `${cfg.id} を出せなかったので、ブロックを戻す`);
+    attempt("ignition:restore", () => dimension.getBlock(blockLoc)?.setType(typeId));
+  }
   release(held);
   return entity !== null;
 }
@@ -219,28 +227,66 @@ export function registerBlockComponent() {
   );
 }
 
-/** 火打石での着火 */
+/**
+ * 火打石での着火。
+ *
+ * 本家では、火打石でTNTを叩くと「TNTに火が点く」だけで、
+ * 火のブロックは置かれない。アドオンのブロックにはその特別扱いが無いので、
+ * 放っておくとエンジンが叩いた面に火を置いてしまう。
+ * その火がTNTに燃え移ると、着火ではなく**燃え尽きて消える**ことになる。
+ *
+ * そこで beforeEvents で操作そのものを取り消し、火を置かせない。
+ * 取り消したうえで、こちらが本家と同じ結果 (TNTに点火・道具の耐久を1減らす) を作る。
+ */
 export function registerFlintAndSteel() {
   attempt("ignition:flint", () =>
-    world.afterEvents.playerInteractWithBlock.subscribe((event) => {
+    world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+      // 1回の右クリックで2回来るので、1回目だけを見る。
+      // 見ないと耐久が2つ減り、着火も二重に走る。
+      if (event.isFirstEvent === false) return;
+
       const { player, block } = event;
       if (!player || !block || !isTnt(block.typeId)) return;
+      if (!holdsFlintAndSteel(player, event.itemStack)) return;
 
-      let heldId = attempt("ignition:heldItem", () => event.itemStack?.typeId, undefined);
-      const equippable = attempt("ignition:equip", () => player.getComponent("minecraft:equippable"), null);
-      const mainhand = attempt("ignition:slot", () => equippable?.getEquipmentSlot(EquipmentSlot.Mainhand), null);
-      if (!heldId && mainhand?.hasItem()) heldId = mainhand.typeId;
-      if (heldId !== "minecraft:flint_and_steel") return;
+      const dimension = player.dimension;
+      const loc = { x: block.location.x, y: block.location.y, z: block.location.z };
+      const typeId = block.typeId;
+      if (isReserved(dimension, loc)) return;
 
-      if (isReserved(player.dimension, block.location)) return;
-      attempt("ignition:durability", () => {
-        if (mainhand?.hasItem() && mainhand.typeId === "minecraft:flint_and_steel") mainhand.damageDurability(1);
-      });
-      // 本家のTNTに火を点けたときと同じ音
-      sound(player.dimension, "fire.ignite", block.location);
-      ignite(player.dimension, block.location, block.typeId);
+      // 火を置かせない。ここが本家との違いをいちばん生んでいた
+      event.cancel = true;
+
+      // beforeEvents の中では世界を書き換えられないので、次のtickで行う
+      attempt("ignition:flintRun", () =>
+        system.run(() => {
+          wearFlintAndSteel(player);
+          sound(dimension, "fire.ignite", loc);
+          ignite(dimension, loc, typeId);
+        })
+      );
     })
   );
+}
+
+/** その人が火打石を持っているか */
+function holdsFlintAndSteel(player, itemStack) {
+  if (itemStack?.typeId === FLINT_AND_STEEL) return true;
+  const slot = mainhandOf(player);
+  return slot?.hasItem() === true && slot.typeId === FLINT_AND_STEEL;
+}
+
+/** 火打石の耐久を1減らす (本家と同じ) */
+function wearFlintAndSteel(player) {
+  attempt("ignition:durability", () => {
+    const slot = mainhandOf(player);
+    if (slot?.hasItem() && slot.typeId === FLINT_AND_STEEL) slot.damageDurability(1);
+  });
+}
+
+function mainhandOf(player) {
+  return attempt("ignition:slot", () =>
+    player.getComponent("minecraft:equippable")?.getEquipmentSlot(EquipmentSlot.Mainhand), null);
 }
 
 /** 燃えている矢での着火 */

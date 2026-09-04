@@ -59,7 +59,21 @@ export function blockJson(def) {
         // 炎・溶岩・レッドストーンによる着火をスクリプト側で拾うための定期処理
         "minecraft:tick": { interval_range: [10, 10] },
         [`${NS}:ignite`]: {},
-        "minecraft:flammable": { catch_chance_modifier: 15, destroy_chance_modifier: 100 },
+        /*
+         * 火が燃え移る設定。
+         *
+         * destroy_chance_modifier は 0 でなければならない。公式の説明にこうある:
+         *   「catch_chance_modifier が 0 より大きい場合、火はブロックが壊れるまで
+         *     燃え続ける (destroy_chance_modifier が 0 なら燃え続けたままになる)」
+         * つまり 0 以外にすると、火の点いたTNTブロックは**燃え尽きて消える**。
+         * 本家のTNTは火が触れると「着火する」ので消えることはないが、
+         * アドオンのブロックにその特別扱いは無く、ただ燃えて無くなってしまう。
+         * 火打石で点けようとしたTNTが時々消えていたのはこれが原因。
+         *
+         * 0 にしておけば絶対に燃え尽きない。火が隣に来たことは
+         * ブロックの定期処理が拾って、10tick 以内に着火する。
+         */
+        "minecraft:flammable": { catch_chance_modifier: 15, destroy_chance_modifier: 0 },
       },
     },
   };

@@ -28,32 +28,82 @@ suite("着火", () => {
     expect.equal(primedEntities(dim).length, 1);
   });
 
+  /** 火打石を持ったプレイヤー */
+  function flintHolder(dim) {
+    const player = dim.spawnEntity("minecraft:player", { x: 0, y: 64, z: 1 });
+    player.worn = 0;
+    player.components = {
+      "minecraft:equippable": {
+        getEquipmentSlot: () => ({
+          hasItem: () => true,
+          typeId: "minecraft:flint_and_steel",
+          damageDurability(n) {
+            player.worn += n;
+          },
+        }),
+      },
+    };
+    return player;
+  }
+
   test("火打石で着火する", () => {
     const dim = freshWorld();
     const loc = { x: 0, y: 64, z: 0 };
     placeTnt(dim, loc, "mega_tnt");
-    const player = dim.spawnEntity("minecraft:player", { x: 0, y: 64, z: 1 });
-    player.components = { "minecraft:equippable": { getEquipmentSlot: () => ({ hasItem: () => true, typeId: "minecraft:flint_and_steel", damageDurability() {} }) } };
+    const player = flintHolder(dim);
 
-    world.afterEvents.playerInteractWithBlock.emit({
+    const event = {
       player,
       block: dim.getBlock(loc),
       itemStack: { typeId: "minecraft:flint_and_steel" },
-    });
+      isFirstEvent: true,
+      cancel: false,
+    };
+    world.beforeEvents.playerInteractWithBlock.emit(event);
+    system.advance(2);
+
     expect.equal(primedEntities(dim).length, 1);
+    expect.equal(event.cancel, true, "操作を取り消していない (火が置かれてしまう)");
   });
 
-  test("火打石以外では着火しない", () => {
+  test("火打石の耐久は1回ぶんしか減らない", () => {
+    // 1回の右クリックでイベントは2回来る。両方に反応すると2つ減る
+    const dim = freshWorld();
+    const loc = { x: 0, y: 64, z: 0 };
+    placeTnt(dim, loc, "mega_tnt");
+    const player = flintHolder(dim);
+
+    const make = (first) => ({
+      player,
+      block: dim.getBlock(loc),
+      itemStack: { typeId: "minecraft:flint_and_steel" },
+      isFirstEvent: first,
+      cancel: false,
+    });
+    world.beforeEvents.playerInteractWithBlock.emit(make(true));
+    world.beforeEvents.playerInteractWithBlock.emit(make(false));
+    system.advance(2);
+
+    expect.equal(player.worn, 1);
+    expect.equal(primedEntities(dim).length, 1, "二重に着火している");
+  });
+
+  test("火打石以外では着火しないし、操作も取り消さない", () => {
     const dim = freshWorld();
     const loc = { x: 0, y: 64, z: 0 };
     placeTnt(dim, loc, "mega_tnt");
     const player = dim.spawnEntity("minecraft:player", { x: 0, y: 64, z: 1 });
-    world.afterEvents.playerInteractWithBlock.emit({
+    const event = {
       player,
       block: dim.getBlock(loc),
       itemStack: { typeId: "minecraft:diamond_pickaxe" },
-    });
+      isFirstEvent: true,
+      cancel: false,
+    };
+    world.beforeEvents.playerInteractWithBlock.emit(event);
+    system.advance(2);
     expect.equal(primedEntities(dim).length, 0);
+    expect.equal(event.cancel, false, "関係ない操作まで取り消している");
   });
 
   test("燃えている矢で着火する", () => {

@@ -513,7 +513,10 @@ export const world = {
   _time: 1000,
   gameRules: { tntExplodes: true, mobGriefing: true, doFireTick: true },
 
-  beforeEvents: { explosion: new Signal() },
+  beforeEvents: {
+    explosion: new Signal(),
+    playerInteractWithBlock: new Signal(),
+  },
   afterEvents: {
     worldLoad: new Signal(),
     playerInteractWithBlock: new Signal(),
