@@ -1,0 +1,14 @@
+{
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "manytnt:confusion_tnt",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

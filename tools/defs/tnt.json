@@ -1,0 +1,1659 @@
+[
+  {
+    "id": "mega_tnt",
+    "ja": "メガTNT",
+    "en": "Mega TNT",
+    "category": "blast",
+    "color": "#780a0a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:tnt",
+      "minecraft:tnt",
+      "minecraft:tnt"
+    ],
+    "power": 14,
+    "breaks": true,
+    "fire": false,
+    "desc": {
+      "ja": "TNT4個分の大爆発を起こす。",
+      "en": "A huge blast worth four TNT."
+    }
+  },
+  {
+    "id": "mini_tnt",
+    "ja": "ミニTNT",
+    "en": "Mini TNT",
+    "category": "blast",
+    "color": "#ff8caa",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:string"
+    ],
+    "power": 2,
+    "breaks": true,
+    "fire": false,
+    "desc": {
+      "ja": "小さな爆発。細かい採掘や演出に。",
+      "en": "A small blast for precise digging."
+    }
+  },
+  {
+    "id": "nuke_tnt",
+    "ja": "核TNT",
+    "en": "Nuke TNT",
+    "category": "nuclear",
+    "color": "#ebc814",
+    "recipe": [
+      "manytnt:mega_tnt",
+      "minecraft:glowstone"
+    ],
+    "power": 20,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "nuke",
+    "trail": "minecraft:basic_flame_particle",
+    "nuclear": true,
+    "desc": {
+      "ja": "きのこ雲・放射能・クレーターを残す核爆発。",
+      "en": "A nuclear blast with a mushroom cloud, radiation and a crater."
+    },
+    "gachaWeight": 3
+  },
+  {
+    "id": "ultra_nuke_tnt",
+    "ja": "超核TNT",
+    "en": "Ultra Nuke TNT",
+    "category": "nuclear",
+    "color": "#1a0000",
+    "recipe": [
+      "manytnt:nuke_tnt",
+      "minecraft:blaze_powder",
+      "minecraft:blaze_powder"
+    ],
+    "power": 35,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "ultraNuke",
+    "trail": "minecraft:basic_flame_particle",
+    "nuclear": true,
+    "desc": {
+      "ja": "核TNTを超える規模の核爆発。",
+      "en": "A nuclear blast even bigger than the Nuke TNT."
+    },
+    "gachaWeight": 2
+  },
+  {
+    "id": "hydrogen_bomb_tnt",
+    "ja": "水素爆弾",
+    "en": "Hydrogen Bomb",
+    "category": "nuclear",
+    "color": "#0a0014",
+    "recipe": [
+      "manytnt:ultra_nuke_tnt",
+      "minecraft:diamond",
+      "minecraft:diamond"
+    ],
+    "power": 50,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "hydrogenBomb",
+    "trail": "minecraft:basic_flame_particle",
+    "nuclear": true,
+    "desc": {
+      "ja": "大地を消し飛ばす水素爆弾。",
+      "en": "A hydrogen bomb that wipes out the land."
+    },
+    "gachaWeight": 1
+  },
+  {
+    "id": "tsar_bomba_tnt",
+    "ja": "ツァーリボンバ",
+    "en": "Tsar Bomba",
+    "category": "nuclear",
+    "color": "#3d0a1e",
+    "recipe": [
+      "manytnt:hydrogen_bomb_tnt",
+      "minecraft:netherite_ingot"
+    ],
+    "power": 65,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "tsarBomba",
+    "trail": "minecraft:basic_flame_particle",
+    "nuclear": true,
+    "desc": {
+      "ja": "史上最大の核爆弾を再現した超巨大爆発。",
+      "en": "Recreates the largest nuclear bomb ever built."
+    },
+    "gachaWeight": 0.5
+  },
+  {
+    "id": "antimatter_tnt",
+    "ja": "反物質爆弾",
+    "en": "Antimatter Bomb",
+    "category": "nuclear",
+    "color": "#ffffff",
+    "recipe": [
+      "manytnt:tsar_bomba_tnt",
+      "minecraft:netherite_ingot",
+      "minecraft:nether_star",
+      "minecraft:amethyst_shard"
+    ],
+    "power": 80,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "antimatter",
+    "trail": "minecraft:endrod",
+    "nuclear": true,
+    "desc": {
+      "ja": "対消滅による、このアドオン最大の破壊。",
+      "en": "Matter-antimatter annihilation. The biggest blast in this addon."
+    },
+    "gachaWeight": 0.25
+  },
+  {
+    "id": "ice_tnt",
+    "ja": "氷結TNT",
+    "en": "Ice TNT",
+    "category": "elemental",
+    "color": "#96e1ff",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:snowball",
+      "minecraft:snowball"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "ice",
+    "trail": "minecraft:snowflake_particle",
+    "desc": {
+      "ja": "周囲の水を凍らせ、雪を積もらせ、敵を鈍足にする。",
+      "en": "Freezes water, adds snow and slows nearby mobs."
+    }
+  },
+  {
+    "id": "poison_tnt",
+    "ja": "毒TNT",
+    "en": "Poison TNT",
+    "category": "elemental",
+    "color": "#5aaa28",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:spider_eye"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "poison",
+    "trail": "minecraft:mob_spell_particle",
+    "desc": {
+      "ja": "周囲に5秒間、毒の霧を広げる。",
+      "en": "Spreads a poison cloud for 5 seconds."
+    }
+  },
+  {
+    "id": "fire_tnt",
+    "ja": "火炎TNT",
+    "en": "Fire TNT",
+    "category": "elemental",
+    "color": "#ff6e14",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:blaze_powder"
+    ],
+    "power": 6,
+    "breaks": true,
+    "fire": true,
+    "effect": "fire",
+    "trail": "minecraft:basic_flame_particle",
+    "desc": {
+      "ja": "爆発と同時に周囲を炎上させる。",
+      "en": "Explodes and sets the area on fire."
+    }
+  },
+  {
+    "id": "thunder_tnt",
+    "ja": "雷TNT",
+    "en": "Thunder TNT",
+    "category": "elemental",
+    "color": "#5a32aa",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:lightning_rod"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": false,
+    "effect": "thunder",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "周囲に雷を6回落とす。",
+      "en": "Calls down 6 lightning bolts."
+    }
+  },
+  {
+    "id": "gravity_tnt",
+    "ja": "重力TNT",
+    "en": "Gravity TNT",
+    "category": "physics",
+    "color": "#1e0a2d",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:obsidian",
+      "minecraft:obsidian"
+    ],
+    "power": 3,
+    "breaks": false,
+    "fire": false,
+    "effect": "gravity",
+    "trail": "minecraft:endrod",
+    "gravityPull": true,
+    "desc": {
+      "ja": "導火線が燃えている間、周囲を吸い込み、最後に吹き飛ばす。",
+      "en": "Pulls things in while lit, then blows them away."
+    }
+  },
+  {
+    "id": "teleport_tnt",
+    "ja": "テレポートTNT",
+    "en": "Teleport TNT",
+    "category": "physics",
+    "color": "#14bebe",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:ender_pearl"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": false,
+    "effect": "teleport",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "周囲の生き物を安全な場所へランダムにテレポートさせる。",
+      "en": "Teleports nearby creatures to random safe spots."
+    }
+  },
+  {
+    "id": "heal_tnt",
+    "ja": "回復TNT",
+    "en": "Heal TNT",
+    "category": "fun",
+    "color": "#ffd2e6",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:glistering_melon_slice"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "heal",
+    "trail": "minecraft:heart_particle",
+    "desc": {
+      "ja": "周囲を回復し、衝撃吸収を与える。",
+      "en": "Heals nearby creatures and grants absorption."
+    }
+  },
+  {
+    "id": "confetti_tnt",
+    "ja": "紙吹雪TNT",
+    "en": "Confetti TNT",
+    "category": "fun",
+    "color": "#faf5eb",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:paper",
+      "minecraft:paper",
+      "minecraft:paper"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "confetti",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "紙吹雪と共にスピードとジャンプ力を与える。",
+      "en": "Confetti that grants speed and jump boost."
+    }
+  },
+  {
+    "id": "rainbow_tnt",
+    "ja": "虹TNT",
+    "en": "Rainbow TNT",
+    "category": "fun",
+    "color": "#f0f0f0",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:amethyst_shard"
+    ],
+    "power": 6,
+    "breaks": true,
+    "fire": false,
+    "effect": "rainbow",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "いろいろなTNTの効果からランダムに1つ発動する。",
+      "en": "Triggers one random effect of another TNT."
+    }
+  },
+  {
+    "id": "magnet_tnt",
+    "ja": "磁力TNT",
+    "en": "Magnet TNT",
+    "category": "physics",
+    "color": "#8c3c14",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:iron_ingot",
+      "minecraft:iron_ingot"
+    ],
+    "power": 2,
+    "breaks": true,
+    "fire": false,
+    "effect": "magnetBurst",
+    "trail": "minecraft:villager_happy",
+    "magnetPull": true,
+    "desc": {
+      "ja": "導火線が燃えている間、アイテムと経験値を吸い寄せる。",
+      "en": "Attracts items and XP while lit."
+    }
+  },
+  {
+    "id": "antigravity_tnt",
+    "ja": "反重力TNT",
+    "en": "Anti-Gravity TNT",
+    "category": "physics",
+    "color": "#c8e6ff",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:phantom_membrane"
+    ],
+    "power": 3,
+    "breaks": false,
+    "fire": false,
+    "effect": "antiGravity",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "周囲を空中へ打ち上げ、浮遊させる。",
+      "en": "Launches nearby creatures into the air."
+    }
+  },
+  {
+    "id": "lava_tnt",
+    "ja": "溶岩TNT",
+    "en": "Lava TNT",
+    "category": "elemental",
+    "color": "#e0560a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:magma"
+    ],
+    "power": 8,
+    "breaks": true,
+    "fire": true,
+    "effect": "lava",
+    "trail": "minecraft:basic_flame_particle",
+    "desc": {
+      "ja": "爆心地に溶岩を撒き散らす。",
+      "en": "Splashes lava around the blast."
+    }
+  },
+  {
+    "id": "water_tnt",
+    "ja": "水TNT",
+    "en": "Water TNT",
+    "category": "elemental",
+    "color": "#1e78c8",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:prismarine_shard"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "water",
+    "trail": "minecraft:bubble_particle",
+    "desc": {
+      "ja": "水を撒いて火を消し、周囲を押し流す。",
+      "en": "Puts out fires and washes mobs away."
+    }
+  },
+  {
+    "id": "darkness_tnt",
+    "ja": "暗闇TNT",
+    "en": "Darkness TNT",
+    "category": "elemental",
+    "color": "#141018",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:ink_sac"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "darkness",
+    "trail": "minecraft:basic_smoke_particle",
+    "desc": {
+      "ja": "周囲を盲目と吐き気にする。",
+      "en": "Blinds and confuses nearby creatures."
+    }
+  },
+  {
+    "id": "summon_tnt",
+    "ja": "召喚TNT",
+    "en": "Summon TNT",
+    "category": "mobs",
+    "color": "#3c1e46",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:rotten_flesh",
+      "minecraft:bone"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "summon",
+    "trail": "minecraft:mob_spell_particle",
+    "desc": {
+      "ja": "ゾンビ・スケルトン・クモを召喚する。",
+      "en": "Summons zombies, skeletons and spiders."
+    }
+  },
+  {
+    "id": "earthquake_tnt",
+    "ja": "地震TNT",
+    "en": "Earthquake TNT",
+    "category": "physics",
+    "color": "#6e5636",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:cobblestone",
+      "minecraft:cobblestone",
+      "minecraft:cobblestone",
+      "minecraft:cobblestone"
+    ],
+    "power": 6,
+    "breaks": true,
+    "fire": false,
+    "effect": "earthquake",
+    "desc": {
+      "ja": "地面を崩し、周囲を揺さぶる。",
+      "en": "Collapses the ground and shakes everything."
+    }
+  },
+  {
+    "id": "bouncy_tnt",
+    "ja": "バウンドTNT",
+    "en": "Bouncy TNT",
+    "category": "physics",
+    "color": "#3cc85a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:slime_ball"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "bouncy",
+    "desc": {
+      "ja": "周囲を跳ね上げ、ジャンプ力を上げる。",
+      "en": "Bounces everything up and boosts jumping."
+    }
+  },
+  {
+    "id": "web_tnt",
+    "ja": "蜘蛛の巣TNT",
+    "en": "Web TNT",
+    "category": "world",
+    "color": "#e6e6e6",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:string",
+      "minecraft:string",
+      "minecraft:string"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "web",
+    "desc": {
+      "ja": "周囲にクモの巣を張る。",
+      "en": "Spreads cobwebs around."
+    }
+  },
+  {
+    "id": "treasure_tnt",
+    "ja": "お宝TNT",
+    "en": "Treasure TNT",
+    "category": "world",
+    "color": "#e6c832",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:gold_ingot"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "treasure",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "鉱物の欠片や金属を撒き散らす。まれに宝石も出る。",
+      "en": "Scatters nuggets and metals, rarely gems."
+    }
+  },
+  {
+    "id": "swap_tnt",
+    "ja": "入れ替えTNT",
+    "en": "Swap TNT",
+    "category": "physics",
+    "color": "#b432c8",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:ender_eye"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "swap",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "一番近い2体の位置を入れ替える。",
+      "en": "Swaps the positions of the two nearest creatures."
+    }
+  },
+  {
+    "id": "confusion_tnt",
+    "ja": "混乱TNT",
+    "en": "Confusion TNT",
+    "category": "elemental",
+    "color": "#786496",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:fermented_spider_eye"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "confusion",
+    "trail": "minecraft:mob_spell_particle",
+    "desc": {
+      "ja": "強い吐き気と鈍足で周囲を混乱させる。",
+      "en": "Confuses nearby creatures with strong nausea."
+    }
+  },
+  {
+    "id": "blackhole_tnt",
+    "ja": "ブラックホールTNT",
+    "en": "Black Hole TNT",
+    "category": "physics",
+    "color": "#0a0018",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:crying_obsidian",
+      "minecraft:crying_obsidian"
+    ],
+    "power": 0,
+    "breaks": true,
+    "fire": false,
+    "effect": "blackhole",
+    "trail": "minecraft:basic_smoke_particle",
+    "desc": {
+      "ja": "数秒間すべてを吸い込み、中心を消し去ってから弾ける。",
+      "en": "Sucks everything in, erases the core, then bursts."
+    }
+  },
+  {
+    "id": "disco_tnt",
+    "ja": "ディスコTNT",
+    "en": "Disco TNT",
+    "category": "fun",
+    "color": "#ff1493",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:redstone_lamp"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "disco",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "床を一時的にカラフルに光らせる。",
+      "en": "Turns the floor into a flashing disco floor for a while."
+    }
+  },
+  {
+    "id": "ufo_tnt",
+    "ja": "UFO襲来TNT",
+    "en": "UFO TNT",
+    "category": "mobs",
+    "color": "#32ff64",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:emerald"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "ufo",
+    "trail": "minecraft:mob_spell_particle",
+    "desc": {
+      "ja": "光の柱で周囲を空へ持ち上げる。",
+      "en": "A beam of light lifts everything into the sky."
+    }
+  },
+  {
+    "id": "fireworks_tnt",
+    "ja": "花火大乱舞TNT",
+    "en": "Fireworks TNT",
+    "category": "fun",
+    "color": "#ffd700",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:firework_rocket"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "fireworks",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "花火を14発打ち上げる。",
+      "en": "Launches 14 fireworks."
+    }
+  },
+  {
+    "id": "meteor_tnt",
+    "ja": "隕石雨TNT",
+    "en": "Meteor TNT",
+    "category": "elemental",
+    "color": "#8b4513",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:fire_charge"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": true,
+    "effect": "meteor",
+    "trail": "minecraft:basic_flame_particle",
+    "desc": {
+      "ja": "空から隕石が6発降り注ぐ。",
+      "en": "Six meteors rain down from the sky."
+    }
+  },
+  {
+    "id": "curse_tnt",
+    "ja": "呪いTNT",
+    "en": "Curse TNT",
+    "category": "elemental",
+    "color": "#1c1c1c",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:soul_sand",
+      "minecraft:soul_sand"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "curse",
+    "trail": "minecraft:mob_spell_particle",
+    "desc": {
+      "ja": "弱体化・鈍足・空腹・暗闇の呪いをかける。",
+      "en": "Curses nearby creatures with weakness, slowness, hunger and darkness."
+    }
+  },
+  {
+    "id": "grass_tnt",
+    "ja": "草原TNT",
+    "en": "Grass TNT",
+    "category": "world",
+    "color": "#4caf50",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:wheat_seeds",
+      "minecraft:bone_meal"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "grass",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "周囲に草花を咲かせる。",
+      "en": "Grows grass and flowers."
+    }
+  },
+  {
+    "id": "desert_tnt",
+    "ja": "砂漠TNT",
+    "en": "Desert TNT",
+    "category": "world",
+    "color": "#e0c068",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:sand",
+      "minecraft:sand"
+    ],
+    "power": 2,
+    "breaks": true,
+    "fire": false,
+    "effect": "desert",
+    "trail": "minecraft:basic_smoke_particle",
+    "desc": {
+      "ja": "周囲の草地を砂漠に変え、サボテンを生やす。",
+      "en": "Turns grass into a desert with cacti."
+    }
+  },
+  {
+    "id": "snowgolem_tnt",
+    "ja": "雪だるまTNT",
+    "en": "Snow Golem TNT",
+    "category": "mobs",
+    "color": "#e8f4ff",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:carved_pumpkin",
+      "minecraft:snowball"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "snowgolem",
+    "trail": "minecraft:snowflake_particle",
+    "desc": {
+      "ja": "スノーゴーレムを呼び、雪を積もらせる。",
+      "en": "Summons snow golems and adds snow."
+    }
+  },
+  {
+    "id": "bee_tnt",
+    "ja": "ハチTNT",
+    "en": "Bee TNT",
+    "category": "mobs",
+    "color": "#ffc107",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:honeycomb",
+      "minecraft:poppy"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "bee",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "ハチの群れを放つ。",
+      "en": "Releases a swarm of bees."
+    }
+  },
+  {
+    "id": "arrow_tnt",
+    "ja": "アロー乱射TNT",
+    "en": "Arrow Barrage TNT",
+    "category": "physics",
+    "color": "#8d6e63",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:arrow",
+      "minecraft:arrow"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "arrow",
+    "trail": "minecraft:crit_particle",
+    "desc": {
+      "ja": "全方向に矢を16本放つ。",
+      "en": "Shoots 16 arrows in every direction."
+    }
+  },
+  {
+    "id": "rocket_tnt",
+    "ja": "ロケットTNT",
+    "en": "Rocket TNT",
+    "category": "physics",
+    "color": "#d32f2f",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:firework_rocket",
+      "minecraft:feather"
+    ],
+    "power": 6,
+    "breaks": true,
+    "fire": false,
+    "trail": "minecraft:basic_flame_particle",
+    "launchUp": true,
+    "desc": {
+      "ja": "着火すると空高く打ち上がってから爆発する。",
+      "en": "Shoots high into the sky before exploding."
+    }
+  },
+  {
+    "id": "music_tnt",
+    "ja": "音楽TNT",
+    "en": "Music TNT",
+    "category": "fun",
+    "color": "#ba68c8",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:noteblock"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "music",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "短いメロディーを奏でる。",
+      "en": "Plays a short melody."
+    }
+  },
+  {
+    "id": "tsunami_tnt",
+    "ja": "津波TNT",
+    "en": "Tsunami TNT",
+    "category": "elemental",
+    "color": "#0288d1",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:heart_of_the_sea"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "tsunami",
+    "trail": "minecraft:bubble_particle",
+    "desc": {
+      "ja": "一時的な大波で周囲を押し流す。",
+      "en": "A temporary wave that washes everything away."
+    }
+  },
+  {
+    "id": "smelter_tnt",
+    "ja": "製錬TNT",
+    "en": "Smelter TNT",
+    "category": "world",
+    "color": "#ff7043",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:furnace"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "smelter",
+    "trail": "minecraft:basic_flame_particle",
+    "desc": {
+      "ja": "周囲の鉱石を製錬済みのインゴットにする。",
+      "en": "Smelts nearby ores into ingots."
+    }
+  },
+  {
+    "id": "harvest_tnt",
+    "ja": "豊作TNT",
+    "en": "Harvest TNT",
+    "category": "world",
+    "color": "#8bc34a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:bone_meal",
+      "minecraft:bone_meal"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "harvest",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "周囲の作物を一瞬で成長させる。",
+      "en": "Instantly grows nearby crops."
+    }
+  },
+  {
+    "id": "daynight_tnt",
+    "ja": "時間TNT",
+    "en": "Day-Night TNT",
+    "category": "fun",
+    "color": "#3949ab",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:clock"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "daynight",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "昼と夜を切り替える。",
+      "en": "Switches between day and night."
+    }
+  },
+  {
+    "id": "storm_tnt",
+    "ja": "嵐TNT",
+    "en": "Storm TNT",
+    "category": "elemental",
+    "color": "#546e7a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:trident"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "storm",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "天候を雷雨にし、雷を落とす。",
+      "en": "Turns the weather into a thunderstorm."
+    }
+  },
+  {
+    "id": "xp_tnt",
+    "ja": "経験値TNT",
+    "en": "XP TNT",
+    "category": "world",
+    "color": "#7cb342",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:experience_bottle",
+      "minecraft:experience_bottle"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "xp",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "経験値オーブを噴き出す。",
+      "en": "Sprays experience orbs."
+    }
+  },
+  {
+    "id": "enderman_tnt",
+    "ja": "エンダーマンTNT",
+    "en": "Enderman TNT",
+    "category": "physics",
+    "color": "#4a148c",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:ender_pearl",
+      "minecraft:ender_pearl"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "enderman",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "プレイヤーを近くへワープさせ、エンダーマンを呼ぶ。",
+      "en": "Warps players nearby and summons Endermen."
+    }
+  },
+  {
+    "id": "slime_tnt",
+    "ja": "スライムTNT",
+    "en": "Slime TNT",
+    "category": "mobs",
+    "color": "#66bb6a",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:slime_ball",
+      "minecraft:slime_ball"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "slime",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "スライムを呼び、周囲を跳ね上げる。",
+      "en": "Summons slimes and bounces things up."
+    }
+  },
+  {
+    "id": "animal_tnt",
+    "ja": "動物TNT",
+    "en": "Animal TNT",
+    "category": "mobs",
+    "color": "#ffab91",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:wheat",
+      "minecraft:apple"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "animal",
+    "trail": "minecraft:heart_particle",
+    "desc": {
+      "ja": "ニワトリ・ウシ・ブタ・ヒツジを呼ぶ。",
+      "en": "Summons chickens, cows, pigs and sheep."
+    }
+  },
+  {
+    "id": "iceage_tnt",
+    "ja": "氷河期TNT",
+    "en": "Ice Age TNT",
+    "category": "elemental",
+    "color": "#81d4fa",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:blue_ice",
+      "minecraft:blue_ice"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "iceage",
+    "trail": "minecraft:snowflake_particle",
+    "desc": {
+      "ja": "広範囲を凍らせ、雪で覆う氷河期。",
+      "en": "Freezes a wide area and covers it in snow."
+    }
+  },
+  {
+    "id": "fortune_tnt",
+    "ja": "運試しTNT",
+    "en": "Fortune TNT",
+    "category": "world",
+    "color": "#ffd700",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:rabbit_foot"
+    ],
+    "power": 2,
+    "breaks": true,
+    "fire": false,
+    "effect": "fortune",
+    "trail": "minecraft:totem_particle",
+    "desc": {
+      "ja": "大当たりなら宝石、はずれなら呪い。",
+      "en": "Jackpot gems or a curse. Try your luck!"
+    }
+  },
+  {
+    "id": "builder_tnt",
+    "ja": "建材TNT",
+    "en": "Builder TNT",
+    "category": "world",
+    "color": "#9e9e9e",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:brick_block",
+      "minecraft:brick_block"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "builder",
+    "trail": "minecraft:crit_particle",
+    "desc": {
+      "ja": "足元の建材を上位の建材に変える。",
+      "en": "Upgrades building blocks under you."
+    }
+  },
+  {
+    "id": "shaft_tnt",
+    "ja": "縦穴TNT",
+    "en": "Shaft TNT",
+    "category": "physics",
+    "color": "#5d4037",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:iron_pickaxe"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "shaft",
+    "trail": "minecraft:basic_smoke_particle",
+    "desc": {
+      "ja": "真下へ最大40ブロックの縦穴を掘る。",
+      "en": "Digs a shaft up to 40 blocks straight down."
+    }
+  },
+  {
+    "id": "beam_tnt",
+    "ja": "ビームTNT",
+    "en": "Beam TNT",
+    "category": "physics",
+    "color": "#00e5ff",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:nether_star"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "beam",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "四方向に破壊光線を放つ。",
+      "en": "Fires damaging beams in four directions."
+    }
+  },
+  {
+    "id": "invisibility_tnt",
+    "ja": "透明TNT",
+    "en": "Invisibility TNT",
+    "category": "fun",
+    "color": "#cfd8dc",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:glass",
+      "minecraft:fermented_spider_eye"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "invisibility",
+    "trail": "minecraft:basic_smoke_particle",
+    "desc": {
+      "ja": "周囲を透明にする。",
+      "en": "Makes nearby creatures invisible."
+    }
+  },
+  {
+    "id": "speed_tnt",
+    "ja": "スピードTNT",
+    "en": "Speed TNT",
+    "category": "fun",
+    "color": "#29b6f6",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:sugar",
+      "minecraft:sugar"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "speed",
+    "trail": "minecraft:crit_particle",
+    "desc": {
+      "ja": "周囲に強力なスピード効果を与える。",
+      "en": "Grants a strong speed boost."
+    }
+  },
+  {
+    "id": "honey_tnt",
+    "ja": "ハチミツTNT",
+    "en": "Honey TNT",
+    "category": "world",
+    "color": "#ffa000",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:honey_bottle",
+      "minecraft:honey_bottle"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "honey",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "周囲をハチミツブロックで埋める。",
+      "en": "Fills the area with honey blocks."
+    }
+  },
+  {
+    "id": "scorched_tnt",
+    "ja": "焦土TNT",
+    "en": "Scorched TNT",
+    "category": "elemental",
+    "color": "#3e2723",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:netherrack",
+      "minecraft:blaze_powder"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": true,
+    "effect": "scorched",
+    "trail": "minecraft:basic_flame_particle",
+    "desc": {
+      "ja": "周囲の草地を焦げた土とネザーラックに変える。",
+      "en": "Scorches grass into coarse dirt and netherrack."
+    }
+  },
+  {
+    "id": "feast_tnt",
+    "ja": "満腹TNT",
+    "en": "Feast TNT",
+    "category": "world",
+    "color": "#ff8a65",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:bread",
+      "minecraft:cooked_beef"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "feast",
+    "trail": "minecraft:heart_particle",
+    "desc": {
+      "ja": "満腹度を回復し、食べ物を撒く。",
+      "en": "Restores hunger and drops food."
+    }
+  },
+  {
+    "id": "cactus_tnt",
+    "ja": "サボテンTNT",
+    "en": "Cactus TNT",
+    "category": "world",
+    "color": "#2e7d32",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:cactus",
+      "minecraft:cactus"
+    ],
+    "power": 1,
+    "breaks": false,
+    "fire": false,
+    "effect": "cactus",
+    "trail": "minecraft:crit_particle",
+    "desc": {
+      "ja": "砂の上にサボテンを生やす。",
+      "en": "Grows cacti on nearby sand."
+    }
+  },
+  {
+    "id": "obsidian_tnt",
+    "ja": "黒曜石TNT",
+    "en": "Obsidian TNT",
+    "category": "world",
+    "color": "#311b92",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:lava_bucket",
+      "minecraft:water_bucket"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "obsidian",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "周囲の溶岩を黒曜石に変える。",
+      "en": "Turns nearby lava into obsidian."
+    }
+  },
+  {
+    "id": "glow_tnt",
+    "ja": "発光TNT",
+    "en": "Glow TNT",
+    "category": "world",
+    "color": "#fff59d",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:glowstone",
+      "minecraft:glow_ink_sac"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "glow",
+    "trail": "minecraft:villager_happy",
+    "desc": {
+      "ja": "周囲にグロウストーンを設置する。",
+      "en": "Places glowstone around."
+    }
+  },
+  {
+    "id": "vacuum_tnt",
+    "ja": "真空TNT",
+    "en": "Vacuum TNT",
+    "category": "physics",
+    "color": "#263238",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:sponge",
+      "minecraft:sponge"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "vacuum",
+    "trail": "minecraft:bubble_particle",
+    "desc": {
+      "ja": "周囲の水と溶岩を吸い取る。",
+      "en": "Removes nearby water and lava."
+    }
+  },
+  {
+    "id": "chorus_tnt",
+    "ja": "エンドTNT",
+    "en": "Chorus TNT",
+    "category": "physics",
+    "color": "#ab47bc",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:chorus_fruit",
+      "minecraft:popped_chorus_fruit"
+    ],
+    "power": 2,
+    "breaks": false,
+    "fire": false,
+    "effect": "chorus",
+    "trail": "minecraft:endrod",
+    "desc": {
+      "ja": "周囲をランダムにワープさせ、コーラスフルーツを落とす。",
+      "en": "Randomly warps creatures and drops chorus fruit."
+    }
+  },
+  {
+    "id": "armageddon_tnt",
+    "ja": "終焉TNT",
+    "en": "Armageddon TNT",
+    "category": "nuclear",
+    "color": "#000000",
+    "recipe": [
+      "manytnt:tsar_bomba_tnt",
+      "manytnt:hydrogen_bomb_tnt",
+      "manytnt:ultra_nuke_tnt",
+      "manytnt:nuke_tnt",
+      "minecraft:nether_star"
+    ],
+    "power": 40,
+    "breaks": true,
+    "fire": true,
+    "underwater": true,
+    "effect": "armageddon",
+    "trail": "minecraft:huge_explosion_emitter",
+    "nuclear": true,
+    "desc": {
+      "ja": "核爆発に加えて、ランダムな効果が4〜5個連続で発動する。",
+      "en": "A nuclear blast followed by 4-5 random effects."
+    },
+    "gachaWeight": 0.25
+  },
+  {
+    "id": "gacha_tnt",
+    "ja": "ガチャTNT",
+    "en": "Gacha TNT",
+    "category": "fun",
+    "color": "#ff69b4",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:emerald",
+      "minecraft:rabbit_foot"
+    ],
+    "power": 2,
+    "breaks": true,
+    "fire": false,
+    "trail": "minecraft:totem_particle",
+    "isGacha": true,
+    "desc": {
+      "ja": "着火した瞬間、ランダムな別のTNTに変わる。",
+      "en": "Turns into a random TNT when lit."
+    }
+  },
+  {
+    "id": "cluster_tnt",
+    "ja": "分裂TNT",
+    "en": "Cluster TNT",
+    "category": "blast",
+    "color": "#e65100",
+    "recipe": [
+      "manytnt:mini_tnt",
+      "manytnt:mini_tnt",
+      "manytnt:mini_tnt",
+      "minecraft:gunpowder"
+    ],
+    "power": 3,
+    "breaks": true,
+    "fire": false,
+    "effect": "cluster",
+    "trail": "minecraft:crit_particle",
+    "texture": {
+      "base": "#e65100",
+      "band": "#141414",
+      "fuse": "#ffd54f"
+    },
+    "desc": {
+      "ja": "爆発すると小さなTNT6個に分裂して飛び散る。",
+      "en": "Splits into six mini TNT that scatter and explode."
+    }
+  },
+  {
+    "id": "landmine_tnt",
+    "ja": "地雷TNT",
+    "en": "Landmine TNT",
+    "category": "blast",
+    "color": "#4e5b31",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:stone_pressure_plate"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": false,
+    "landmine": true,
+    "trail": "minecraft:basic_smoke_particle",
+    "texture": {
+      "base": "#556b2f",
+      "band": "#141414",
+      "fuse": "#d32f2f"
+    },
+    "desc": {
+      "ja": "上に乗ると起爆する。設置した本人としゃがんでいるプレイヤーは起爆しない。",
+      "en": "Explodes when stepped on. Ignores its owner and sneaking players."
+    }
+  },
+  {
+    "id": "timer_tnt",
+    "ja": "時限TNT",
+    "en": "Time Bomb TNT",
+    "category": "blast",
+    "color": "#b71c1c",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:clock",
+      "minecraft:redstone"
+    ],
+    "power": 8,
+    "breaks": true,
+    "fire": false,
+    "timer": 30,
+    "trail": "minecraft:basic_flame_particle",
+    "texture": {
+      "base": "#b71c1c",
+      "band": "#141414",
+      "fuse": "#76ff03"
+    },
+    "desc": {
+      "ja": "着火から30秒後に爆発する。残り時間が近くのプレイヤーに表示される。",
+      "en": "Explodes 30 seconds after being lit. Nearby players see a countdown."
+    }
+  },
+  {
+    "id": "homing_tnt",
+    "ja": "誘導TNT",
+    "en": "Homing TNT",
+    "category": "blast",
+    "color": "#ff5722",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:compass"
+    ],
+    "power": 4,
+    "breaks": true,
+    "fire": false,
+    "homing": true,
+    "trail": "minecraft:basic_flame_particle",
+    "texture": {
+      "base": "#ff5722",
+      "band": "#141414",
+      "fuse": "#ffffff"
+    },
+    "desc": {
+      "ja": "導火線が燃えている間、一番近い敵対モブへ飛んでいく。",
+      "en": "Flies toward the nearest hostile mob while lit."
+    }
+  },
+  {
+    "id": "mining_tnt",
+    "ja": "採掘TNT",
+    "en": "Mining TNT",
+    "category": "world",
+    "color": "#607d8b",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:golden_pickaxe"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "mining",
+    "trail": "minecraft:crit_particle",
+    "texture": {
+      "base": "#607d8b",
+      "band": "#141414",
+      "fuse": "#4dd0e1"
+    },
+    "desc": {
+      "ja": "周囲の鉱石だけを掘り出してドロップさせる。",
+      "en": "Mines only the ores around it and drops them."
+    }
+  },
+  {
+    "id": "wall_tnt",
+    "ja": "防壁TNT",
+    "en": "Wall TNT",
+    "category": "world",
+    "color": "#8d8d8d",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:stone_bricks",
+      "minecraft:stone_bricks"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "wall",
+    "trail": "minecraft:crit_particle",
+    "texture": {
+      "base": "#8d8d8d",
+      "band": "#141414",
+      "fuse": "#ffffff"
+    },
+    "desc": {
+      "ja": "周囲に石レンガの円形の壁を建てる。",
+      "en": "Builds a round stone brick wall around it."
+    }
+  },
+  {
+    "id": "timestop_tnt",
+    "ja": "時間停止TNT",
+    "en": "Time Stop TNT",
+    "category": "physics",
+    "color": "#7e57c2",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:clock",
+      "minecraft:packed_ice"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "timestop",
+    "trail": "minecraft:endrod",
+    "texture": {
+      "base": "#7e57c2",
+      "band": "#ffffff",
+      "fuse": "#ffffff"
+    },
+    "desc": {
+      "ja": "周囲のモブを8秒間完全に停止させる。",
+      "en": "Freezes nearby mobs in place for 8 seconds."
+    }
+  },
+  {
+    "id": "forest_tnt",
+    "ja": "植林TNT",
+    "en": "Forest TNT",
+    "category": "world",
+    "color": "#33691e",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:oak_sapling",
+      "minecraft:oak_sapling"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "forest",
+    "trail": "minecraft:villager_happy",
+    "texture": {
+      "base": "#33691e",
+      "band": "#141414",
+      "fuse": "#aed581"
+    },
+    "desc": {
+      "ja": "周囲の草地に苗木を植える。",
+      "en": "Plants saplings on nearby grass."
+    }
+  },
+  {
+    "id": "bridge_tnt",
+    "ja": "橋TNT",
+    "en": "Bridge TNT",
+    "category": "world",
+    "color": "#a1887f",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:oak_planks",
+      "minecraft:oak_planks",
+      "minecraft:oak_planks"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "bridge",
+    "trail": "minecraft:crit_particle",
+    "texture": {
+      "base": "#a1887f",
+      "band": "#141414",
+      "fuse": "#ffffff"
+    },
+    "desc": {
+      "ja": "着火した人が向いている方向に、長さ24の橋を架ける。",
+      "en": "Builds a 24-block bridge in the direction the igniter faces."
+    }
+  },
+  {
+    "id": "reaper_tnt",
+    "ja": "収穫祭TNT",
+    "en": "Reaper TNT",
+    "category": "world",
+    "color": "#ffb300",
+    "recipe": [
+      "minecraft:tnt",
+      "minecraft:iron_hoe"
+    ],
+    "power": 0,
+    "breaks": false,
+    "fire": false,
+    "effect": "reaper",
+    "trail": "minecraft:villager_happy",
+    "texture": {
+      "base": "#ffb300",
+      "band": "#141414",
+      "fuse": "#8bc34a"
+    },
+    "desc": {
+      "ja": "周囲の実った作物を収穫して、種を植え直す。",
+      "en": "Harvests ripe crops nearby and replants them."
+    }
+  }
+]
