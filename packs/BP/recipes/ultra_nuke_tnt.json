@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:ultra_nuke_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:nuke_tnt"
+      },
+      {
+        "item": "minecraft:blaze_powder"
+      },
+      {
+        "item": "minecraft:blaze_powder"
+      }
+    ],
+    "result": {
+      "item": "manytnt:ultra_nuke_tnt",
+      "count": 1
+    }
+  }
+}

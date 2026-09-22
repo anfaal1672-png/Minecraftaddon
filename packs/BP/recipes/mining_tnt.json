@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:mining_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:golden_pickaxe"
+      }
+    ],
+    "result": {
+      "item": "manytnt:mining_tnt",
+      "count": 1
+    }
+  }
+}

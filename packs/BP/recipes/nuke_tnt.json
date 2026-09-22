@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:nuke_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "manytnt:mega_tnt"
+      },
+      {
+        "item": "minecraft:glowstone"
+      }
+    ],
+    "result": {
+      "item": "manytnt:nuke_tnt",
+      "count": 1
+    }
+  }
+}

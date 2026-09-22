@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:scorched_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:netherrack"
+      },
+      {
+        "item": "minecraft:blaze_powder"
+      }
+    ],
+    "result": {
+      "item": "manytnt:scorched_tnt",
+      "count": 1
+    }
+  }
+}

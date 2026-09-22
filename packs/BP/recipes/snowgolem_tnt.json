@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:snowgolem_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:carved_pumpkin"
+      },
+      {
+        "item": "minecraft:snowball"
+      }
+    ],
+    "result": {
+      "item": "manytnt:snowgolem_tnt",
+      "count": 1
+    }
+  }
+}

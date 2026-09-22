@@ -1,0 +1,12 @@
+{
+  "resource_pack_name": "many_tnt",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "manytnt_detonator": {
+      "textures": "textures/items/detonator"
+    },
+    "manytnt_tnt_guide": {
+      "textures": "textures/items/tnt_guide"
+    }
+  }
+}

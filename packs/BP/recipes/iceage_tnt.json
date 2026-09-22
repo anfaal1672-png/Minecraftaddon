@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:iceage_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:blue_ice"
+      },
+      {
+        "item": "minecraft:blue_ice"
+      }
+    ],
+    "result": {
+      "item": "manytnt:iceage_tnt",
+      "count": 1
+    }
+  }
+}

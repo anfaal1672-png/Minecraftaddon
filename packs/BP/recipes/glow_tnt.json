@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:glow_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:glowstone"
+      },
+      {
+        "item": "minecraft:glow_ink_sac"
+      }
+    ],
+    "result": {
+      "item": "manytnt:glow_tnt",
+      "count": 1
+    }
+  }
+}

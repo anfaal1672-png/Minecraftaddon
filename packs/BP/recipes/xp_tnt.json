@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:xp_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:experience_bottle"
+      },
+      {
+        "item": "minecraft:experience_bottle"
+      }
+    ],
+    "result": {
+      "item": "manytnt:xp_tnt",
+      "count": 1
+    }
+  }
+}

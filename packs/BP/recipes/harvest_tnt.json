@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "manytnt:harvest_tnt_recipe"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "unlock": [
+      {
+        "item": "minecraft:tnt"
+      }
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:tnt"
+      },
+      {
+        "item": "minecraft:bone_meal"
+      },
+      {
+        "item": "minecraft:bone_meal"
+      }
+    ],
+    "result": {
+      "item": "manytnt:harvest_tnt",
+      "count": 1
+    }
+  }
+}

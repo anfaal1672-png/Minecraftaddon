@@ -1,0 +1,19 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:item": {
+    "description": {
+      "identifier": "manytnt:tnt_guide",
+      "menu_category": {
+        "category": "items",
+        "group": "manytnt:itemGroup.name.tnt"
+      }
+    },
+    "components": {
+      "minecraft:icon": "manytnt_tnt_guide",
+      "minecraft:display_name": {
+        "value": "item.manytnt:tnt_guide.name"
+      },
+      "minecraft:max_stack_size": 1
+    }
+  }
+}
