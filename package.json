@@ -1,0 +1,19 @@
+{
+  "name": "many-tnt-addon",
+  "version": "31.0.0",
+  "private": true,
+  "description": "いろんなTNT追加アドオン (Minecraft Bedrock)",
+  "type": "module",
+  "scripts": {
+    "generate": "node tools/generate.mjs",
+    "validate": "node tools/validate.mjs",
+    "test": "node --import ./test/setup.mjs --test \"test/*.test.mjs\"",
+    "build": "node tools/generate.mjs && node tools/validate.mjs && node tools/build.mjs",
+    "check": "node tools/generate.mjs && node tools/validate.mjs && npm test"
+  },
+  "devDependencies": {
+    "@minecraft/server": "2.7.0",
+    "@minecraft/server-ui": "2.0.0",
+    "@minecraft/vanilla-data": "^1.26.20"
+  }
+}
